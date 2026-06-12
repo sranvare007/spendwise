@@ -8,6 +8,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "scheme": "spendwise",
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/f11b8524-2889-40de-94fd-a8edfde96887",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.spendwise"
@@ -30,7 +37,15 @@
           "backgroundColor": "#ffffff",
           "image": "./assets/splash-icon.png"
         }
-      ]
-    ]
+      ],
+      "expo-sqlite",
+      "expo-updates"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f11b8524-2889-40de-94fd-a8edfde96887"
+      }
+    },
+    "owner": "srnanvare007"
   }
 }

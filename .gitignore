@@ -32,6 +32,14 @@ yarn-error.*
 # local env files
 .env*.local
 
+# EAS / secrets
+google-service-account.json
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+
 # typescript
 *.tsbuildinfo
 
