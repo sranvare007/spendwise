@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, TextInput } from 'react-native';
+import { View, ScrollView, TextInput } from 'react-native';
+import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, hexA, tint } from '../theme';
 import { Icon, IconName } from '../icons';
@@ -73,11 +74,11 @@ export function Home() {
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
           <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontWeight: '800', fontSize: 16, color: t.accent }}>AR</Text>
+            <AppText style={{ fontWeight: '800', fontSize: 16, color: t.accent }}>AR</AppText>
           </View>
           <View>
-            <Text style={{ fontSize: 12, color: t.faint, fontWeight: '600' }}>Good evening</Text>
-            <Text style={{ fontSize: 17, color: t.text, fontWeight: '700' }}>Aarav Sharma</Text>
+            <AppText style={{ fontSize: 12, color: t.faint, fontWeight: '600' }}>Good evening</AppText>
+            <AppText style={{ fontSize: 17, color: t.text, fontWeight: '700' }}>Aarav Sharma</AppText>
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -86,7 +87,7 @@ export function Home() {
           </Press>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 34, paddingHorizontal: 12, borderRadius: 999, backgroundColor: t.pop }}>
             <Icon name="flame" size={15} color="#7A3C00" />
-            <Text style={{ fontWeight: '800', fontSize: 13, color: '#7A3C00' }}>7</Text>
+            <AppText style={{ fontWeight: '800', fontSize: 13, color: '#7A3C00' }}>7</AppText>
           </View>
         </View>
       </View>
@@ -95,21 +96,21 @@ export function Home() {
         {/* Hero */}
         <View style={{ borderRadius: 24, backgroundColor: t.hero, padding: 22, overflow: 'hidden', shadowColor: '#081420', shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 12 }, elevation: 6 }}>
           <View style={{ position: 'absolute', right: -30, top: -30, width: 140, height: 140, borderRadius: 70, backgroundColor: t.heroGlow }} />
-          <Text style={{ fontSize: 11.5, fontWeight: '700', letterSpacing: 1, color: t.heroText }}>SPENT IN {monthName(new Date()).toUpperCase()}</Text>
+          <AppText style={{ fontSize: 11.5, fontWeight: '700', letterSpacing: 1, color: t.heroText }}>SPENT IN {monthName(new Date()).toUpperCase()}</AppText>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 7 }}>
-            <Text style={{ fontSize: 21, fontWeight: '700', color: t.heroNum, opacity: 0.9, marginBottom: 4 }}>₹</Text>
-            <Text style={{ fontSize: 42, fontWeight: '800', color: t.heroNum, lineHeight: 44 }}>{inr(spent)}</Text>
+            <AppText style={{ fontSize: 21, fontWeight: '700', color: t.heroNum, opacity: 0.9, marginBottom: 4 }}>₹</AppText>
+            <AppText style={{ fontSize: 42, fontWeight: '800', color: t.heroNum, lineHeight: 44 }}>{inr(spent)}</AppText>
           </View>
           <View style={{ marginTop: 16, height: 8, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' }}>
             <View style={{ height: '100%', borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.92)', width: pctW(pct * 100) }} />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 13 }}>
-            <Text style={{ fontSize: 13, color: t.heroText }}>
-              <Text style={{ color: t.heroNum, fontWeight: '700' }}>₹{inr(left)}</Text> left of ₹{inr(budget)}
-            </Text>
+            <AppText style={{ fontSize: 13, color: t.heroText }}>
+              <AppText style={{ color: t.heroNum, fontWeight: '700' }}>₹{inr(left)}</AppText> left of ₹{inr(budget)}
+            </AppText>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 26, paddingHorizontal: 11, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.94)' }}>
               <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: toneColor }} />
-              <Text style={{ fontSize: 12, fontWeight: '700', color: toneColor }}>{toneLabel}</Text>
+              <AppText style={{ fontSize: 12, fontWeight: '700', color: toneColor }}>{toneLabel}</AppText>
             </View>
           </View>
         </View>
@@ -117,8 +118,8 @@ export function Home() {
         {/* Needs vs Wants */}
         <View style={{ marginTop: 14, borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 15, paddingHorizontal: 17 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: t.text }}>Needs vs Wants</Text>
-            <Text style={{ fontSize: 11.5, color: t.faint, fontWeight: '600' }}>{((needs / nw) * 100).toFixed(0)}% essential</Text>
+            <AppText style={{ fontSize: 13, fontWeight: '700', color: t.text }}>Needs vs Wants</AppText>
+            <AppText style={{ fontSize: 11.5, color: t.faint, fontWeight: '600' }}>{((needs / nw) * 100).toFixed(0)}% essential</AppText>
           </View>
           <View style={{ flexDirection: 'row', height: 9, borderRadius: 99, overflow: 'hidden', backgroundColor: t.card2 }}>
             <View style={{ width: pctW((needs / nw) * 100), backgroundColor: t.accent }} />
@@ -127,19 +128,19 @@ export function Home() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.accent, marginRight: 6 }} />
-              <Text style={{ fontSize: 12, color: t.sub }}>Needs ₹{inr(needs)}</Text>
+              <AppText style={{ fontSize: 12, color: t.sub }}>Needs ₹{inr(needs)}</AppText>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.pop, marginRight: 6 }} />
-              <Text style={{ fontSize: 12, color: t.sub }}>Wants ₹{inr(wants)}</Text>
+              <AppText style={{ fontSize: 12, color: t.sub }}>Wants ₹{inr(wants)}</AppText>
             </View>
           </View>
         </View>
 
         {/* Transactions heading */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 22, marginBottom: 12, paddingHorizontal: 2 }}>
-          <Text style={{ fontSize: 18, fontWeight: '800', color: t.text }}>Transactions</Text>
-          <Text style={{ fontSize: 12.5, color: t.faint, fontWeight: '600' }}>{filteredCount} {filteredCount === 1 ? 'expense' : 'expenses'}</Text>
+          <AppText style={{ fontSize: 18, fontWeight: '800', color: t.text }}>Transactions</AppText>
+          <AppText style={{ fontSize: 12.5, color: t.faint, fontWeight: '600' }}>{filteredCount} {filteredCount === 1 ? 'expense' : 'expenses'}</AppText>
         </View>
 
         {/* Search */}
@@ -150,7 +151,7 @@ export function Home() {
             onChangeText={(q) => setFilter({ q })}
             placeholder="Search expenses"
             placeholderTextColor={t.faint}
-            style={{ flex: 1, fontSize: 14.5, color: t.text, padding: 0 }}
+            style={{ flex: 1, fontSize: 14.5, color: t.text, padding: 0, fontFamily: 'Montserrat_400Regular' }}
           />
         </View>
 
@@ -160,7 +161,7 @@ export function Home() {
             const active = filter.range === k;
             return (
               <Press key={k} onPress={() => setFilter({ range: k })} style={{ flex: 1, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accent : 'transparent' }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{label}</Text>
+                <AppText style={{ fontSize: 13, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{label}</AppText>
               </Press>
             );
           })}
@@ -173,7 +174,7 @@ export function Home() {
             return (
               <Press key={c.id} onPress={() => setFilter({ cat: c.id })} style={{ flexDirection: 'row', alignItems: 'center', height: 36, paddingHorizontal: 14, borderRadius: 99, backgroundColor: active ? t.accentSoft : t.card, borderWidth: 1.5, borderColor: active ? t.accent : t.line }}>
                 {c.icon && <View style={{ marginRight: 6 }}><Icon name={c.icon} size={15} color={active ? t.accent : t.faint} /></View>}
-                <Text style={{ fontSize: 13, fontWeight: '700', color: active ? t.accent : t.sub }}>{c.short}</Text>
+                <AppText style={{ fontSize: 13, fontWeight: '700', color: active ? t.accent : t.sub }}>{c.short}</AppText>
               </Press>
             );
           })}
@@ -185,7 +186,7 @@ export function Home() {
             const active = filter.wn === k;
             return (
               <Press key={k} onPress={() => setFilter({ wn: k as 'all' | 'NEED' | 'WANT' })} style={{ flex: 1, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accentSoft : t.card, borderWidth: 1.5, borderColor: active ? t.accent : t.line }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: active ? t.accent : t.sub }}>{label}</Text>
+                <AppText style={{ fontSize: 13, fontWeight: '700', color: active ? t.accent : t.sub }}>{label}</AppText>
               </Press>
             );
           })}
@@ -196,8 +197,8 @@ export function Home() {
           {groups.map((g) => (
             <View key={g.label} style={{ marginBottom: 18 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 2, marginBottom: 9 }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6 }}>{g.label}</Text>
-                <Text style={{ fontSize: 12, color: t.faint, fontWeight: '600' }}>₹{inr(g.total)}</Text>
+                <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6 }}>{g.label}</AppText>
+                <AppText style={{ fontSize: 12, color: t.faint, fontWeight: '600' }}>₹{inr(g.total)}</AppText>
               </View>
               <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden' }}>
                 {g.items.map((e, i) => {
@@ -208,18 +209,18 @@ export function Home() {
                         <Icon name={c.icon} size={21} color={c.color} />
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text numberOfLines={1} style={{ fontSize: 14.5, fontWeight: '700', color: t.text }}>{e.desc}</Text>
+                        <AppText numberOfLines={1} style={{ fontSize: 14.5, fontWeight: '700', color: t.text }}>{e.desc}</AppText>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 3 }}>
-                          <Text style={{ fontSize: 12, color: t.faint }}>{c.name}</Text>
+                          <AppText style={{ fontSize: 12, color: t.faint }}>{c.name}</AppText>
                           <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: t.faint }} />
                           <View style={{ paddingVertical: 1, paddingHorizontal: 7, borderRadius: 99, backgroundColor: wnBg(e.wn) }}>
-                            <Text style={{ fontSize: 11, fontWeight: '700', color: wnFg(e.wn) }}>{e.wn === 'NEED' ? 'Need' : 'Want'}</Text>
+                            <AppText style={{ fontSize: 11, fontWeight: '700', color: wnFg(e.wn) }}>{e.wn === 'NEED' ? 'Need' : 'Want'}</AppText>
                           </View>
                         </View>
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 15, fontWeight: '800', color: t.text }}>-₹{inr(e.amount)}</Text>
-                        <Text style={{ fontSize: 11, color: t.faint, marginTop: 2 }}>{timeFmt(new Date(e.date))}</Text>
+                        <AppText style={{ fontSize: 15, fontWeight: '800', color: t.text }}>-₹{inr(e.amount)}</AppText>
+                        <AppText style={{ fontSize: 11, color: t.faint, marginTop: 2 }}>{timeFmt(new Date(e.date))}</AppText>
                       </View>
                     </View>
                   );
@@ -233,8 +234,8 @@ export function Home() {
               <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: t.card2, alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
                 <Icon name="search" size={28} color={t.faint} strokeWidth={1.8} />
               </View>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: t.text }}>Nothing here yet</Text>
-              <Text style={{ fontSize: 13, color: t.faint, marginTop: 5, maxWidth: 220, textAlign: 'center' }}>No expenses match these filters. Try a different range or tap + to add one.</Text>
+              <AppText style={{ fontSize: 15, fontWeight: '700', color: t.text }}>Nothing here yet</AppText>
+              <AppText style={{ fontSize: 13, color: t.faint, marginTop: 5, maxWidth: 220, textAlign: 'center' }}>No expenses match these filters. Try a different range or tap + to add one.</AppText>
             </View>
           )}
         </View>

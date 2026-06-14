@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, ScrollView } from 'react-native';
+import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, tint, inr, ThemeKey, THEME_META } from '../theme';
 import { Icon, IconName } from '../icons';
@@ -31,24 +32,24 @@ export function Settings() {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: '800', color: t.text }}>Settings</Text>
+        <AppText style={{ fontSize: 28, fontWeight: '800', color: t.text }}>Settings</AppText>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 130 }}>
         {/* Profile */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 16 }}>
           <View style={{ width: 50, height: 50, borderRadius: 16, backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontWeight: '800', fontSize: 18, color: t.accent }}>AR</Text>
+            <AppText style={{ fontWeight: '800', fontSize: 18, color: t.accent }}>AR</AppText>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 16, fontWeight: '800', color: t.text }}>Aarav Sharma</Text>
-            <Text style={{ fontSize: 13, color: t.faint }}>Free plan · Tap to manage</Text>
+            <AppText style={{ fontSize: 16, fontWeight: '800', color: t.text }}>Aarav Sharma</AppText>
+            <AppText style={{ fontSize: 13, color: t.faint }}>Free plan · Tap to manage</AppText>
           </View>
         </View>
 
         {/* Appearance */}
-        <Text style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Appearance</Text>
+        <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Appearance</AppText>
         <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 16 }}>
-          <Text style={{ fontSize: 13.5, fontWeight: '700', color: t.text, marginBottom: 12 }}>App theme</Text>
+          <AppText style={{ fontSize: 13.5, fontWeight: '700', color: t.text, marginBottom: 12 }}>App theme</AppText>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             {themeKeys.map((k) => {
               const m = THEME_META[k];
@@ -61,7 +62,7 @@ export function Settings() {
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                     {active && <Icon name="check" size={13} color={t.accent} strokeWidth={2.6} />}
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: active ? t.accent : t.sub }}>{m.name}</Text>
+                    <AppText style={{ fontSize: 12, fontWeight: '700', color: active ? t.accent : t.sub }}>{m.name}</AppText>
                   </View>
                 </Press>
               );
@@ -70,35 +71,35 @@ export function Settings() {
         </View>
 
         {/* Budget & data */}
-        <Text style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Budget & data</Text>
+        <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Budget & data</AppText>
         <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden' }}>
           {manageRows.map((m, i) => (
             <Press key={m.label + i} onPress={() => setSub(m.sub)} style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: i === manageRows.length - 1 ? 0 : 1, borderBottomColor: t.line }}>
               <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: tint(m.color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name={m.icon} size={18} color={m.color} />
               </View>
-              <Text style={{ flex: 1, fontSize: 14.5, fontWeight: '600', color: t.text }}>{m.label}</Text>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: t.faint }}>{m.detail}</Text>
+              <AppText style={{ flex: 1, fontSize: 14.5, fontWeight: '600', color: t.text }}>{m.label}</AppText>
+              <AppText style={{ fontSize: 13, fontWeight: '700', color: t.faint }}>{m.detail}</AppText>
               <Icon name="chevR" size={14} color={t.faint} strokeWidth={2.4} />
             </Press>
           ))}
         </View>
 
         {/* Notifications */}
-        <Text style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Notifications</Text>
+        <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Notifications</AppText>
         <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden' }}>
           {toggleRows.map((r, i) => (
             <View key={r.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: i === toggleRows.length - 1 ? 0 : 1, borderBottomColor: t.line }}>
               <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: tint(r.color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name={r.icon} size={18} color={r.color} />
               </View>
-              <Text style={{ flex: 1, fontSize: 14.5, fontWeight: '600', color: t.text }}>{r.label}</Text>
+              <AppText style={{ flex: 1, fontSize: 14.5, fontWeight: '600', color: t.text }}>{r.label}</AppText>
               <Toggle on={settings[r.key]} onToggle={() => toggleSetting(r.key)} />
             </View>
           ))}
         </View>
 
-        <Text style={{ textAlign: 'center', fontSize: 12, color: t.faint, marginTop: 26 }}>SpendWise v1.0 · Made with the GoTo palette</Text>
+        <AppText style={{ textAlign: 'center', fontSize: 12, color: t.faint, marginTop: 26 }}>SpendWise v1.0 · Made with the GoTo palette</AppText>
       </ScrollView>
     </View>
   );

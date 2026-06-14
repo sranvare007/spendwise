@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, ScrollView } from 'react-native';
+import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { useTheme, inr, tint } from '../theme';
@@ -46,8 +47,8 @@ export function Insights() {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: '800', color: t.text }}>Insights</Text>
-        <Text style={{ fontSize: 13, color: t.faint, marginTop: 2 }}>Refreshed today · based on your last 30 days</Text>
+        <AppText style={{ fontSize: 28, fontWeight: '800', color: t.text }}>Insights</AppText>
+        <AppText style={{ fontSize: 13, color: t.faint, marginTop: 2 }}>Refreshed today · based on your last 30 days</AppText>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 130 }}>
         {/* Savings ring hero */}
@@ -58,13 +59,13 @@ export function Insights() {
               <Circle cx={60} cy={60} r={RING_R} fill="none" stroke={t.heroNum} strokeWidth={12} strokeLinecap="round" strokeDasharray={[0.2 * RING_C, RING_C]} />
             </Svg>
             <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }} pointerEvents="none">
-              <Text style={{ fontSize: 24, fontWeight: '800', color: t.heroNum }}>20%</Text>
+              <AppText style={{ fontSize: 24, fontWeight: '800', color: t.heroNum }}>20%</AppText>
             </View>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 11.5, fontWeight: '700', letterSpacing: 0.8, color: t.heroText }}>SAVINGS POTENTIAL</Text>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: t.heroNum, marginTop: 6, lineHeight: 21 }}>Trim wants by 20% to save ₹{v.savingsAmt}/mo</Text>
-            <Text style={{ fontSize: 12.5, color: t.heroText, marginTop: 6 }}>You spent ₹{inr(v.wants)} on wants this month.</Text>
+            <AppText style={{ fontSize: 11.5, fontWeight: '700', letterSpacing: 0.8, color: t.heroText }}>SAVINGS POTENTIAL</AppText>
+            <AppText style={{ fontSize: 15, fontWeight: '700', color: t.heroNum, marginTop: 6, lineHeight: 21 }}>Trim wants by 20% to save ₹{v.savingsAmt}/mo</AppText>
+            <AppText style={{ fontSize: 12.5, color: t.heroText, marginTop: 6 }}>You spent ₹{inr(v.wants)} on wants this month.</AppText>
           </View>
         </View>
 
@@ -77,8 +78,8 @@ export function Insights() {
                 <Icon name={c.icon} size={21} color={c.color} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontSize: 14.5, fontWeight: '800', color: t.text }}>{c.title}</Text>
-                <Text style={{ fontSize: 13, color: t.sub, lineHeight: 19.5, marginTop: 4 }}>{c.body}</Text>
+                <AppText style={{ fontSize: 14.5, fontWeight: '800', color: t.text }}>{c.title}</AppText>
+                <AppText style={{ fontSize: 13, color: t.sub, lineHeight: 19.5, marginTop: 4 }}>{c.body}</AppText>
               </View>
               <Press onPress={() => toggleInsight(c.id)} hitSlop={8} style={{ padding: 2 }}>
                 <Icon name="bookmark" size={20} color={saved ? t.accent : t.faint} strokeWidth={1.8} fill={saved ? t.accent : 'none'} />

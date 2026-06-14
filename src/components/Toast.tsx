@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated } from 'react-native';
+import { View, Animated } from 'react-native';
+import { AppText } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { Icon, IconName } from '../icons';
@@ -37,7 +38,7 @@ export function Toast() {
         <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: tone.bg, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name={tone.icon} size={14} color="#fff" strokeWidth={2.4} />
         </View>
-        <Text style={{ fontSize: 13.5, fontWeight: '600', color: t.toastText, flexShrink: 1 }}>{toast.msg}</Text>
+        <AppText style={{ fontSize: 13.5, fontWeight: '600', color: t.toastText, flexShrink: 1 }}>{toast.msg}</AppText>
       </View>
     </Animated.View>
   );

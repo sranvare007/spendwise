@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, Animated } from 'react-native';
+import { View, ScrollView, Animated } from 'react-native';
+import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, tint } from '../theme';
 import { Icon } from '../icons';
@@ -56,30 +57,30 @@ export function SubScreen() {
         <Press onPress={() => setSub(null)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="chevL" size={18} color={t.text} strokeWidth={2.2} />
         </Press>
-        <Text style={{ fontSize: 21, fontWeight: '800', color: t.text }}>{title}</Text>
+        <AppText style={{ fontSize: 21, fontWeight: '800', color: t.text }}>{title}</AppText>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 }}>
         {sub === 'budgets' && (
           <>
             <View style={{ borderRadius: 20, backgroundColor: t.hero, padding: 20, shadowColor: '#081420', shadowOpacity: 0.14, shadowRadius: 16, shadowOffset: { width: 0, height: 10 }, elevation: 6 }}>
-              <Text style={{ fontSize: 11.5, fontWeight: '700', letterSpacing: 0.8, color: t.heroText }}>MONTHLY BUDGET</Text>
+              <AppText style={{ fontSize: 11.5, fontWeight: '700', letterSpacing: 0.8, color: t.heroText }}>MONTHLY BUDGET</AppText>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
                 <Press onPress={() => changeBudget(-500)} style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name="minus" size={20} color={t.heroNum} strokeWidth={2.6} />
                 </Press>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-                  <Text style={{ fontSize: 18, fontWeight: '700', color: t.heroNum, marginBottom: 4 }}>₹</Text>
-                  <Text style={{ fontSize: 36, fontWeight: '800', color: t.heroNum }}>{inr(budget)}</Text>
+                  <AppText style={{ fontSize: 18, fontWeight: '700', color: t.heroNum, marginBottom: 4 }}>₹</AppText>
+                  <AppText style={{ fontSize: 36, fontWeight: '800', color: t.heroNum }}>{inr(budget)}</AppText>
                 </View>
                 <Press onPress={() => changeBudget(500)} style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name="plus" size={20} color={t.heroNum} strokeWidth={2.6} />
                 </Press>
               </View>
-              <Text style={{ fontSize: 12.5, color: t.heroText, textAlign: 'center', marginTop: 10 }}>₹{inr(spent)} spent · ₹{inr(left)} remaining</Text>
+              <AppText style={{ fontSize: 12.5, color: t.heroText, textAlign: 'center', marginTop: 10 }}>₹{inr(spent)} spent · ₹{inr(left)} remaining</AppText>
             </View>
 
-            <Text style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 22, marginBottom: 10, marginLeft: 4 }}>By category</Text>
+            <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 22, marginBottom: 10, marginLeft: 4 }}>By category</AppText>
             <View style={{ gap: 12 }}>
               {catBudgets.map((cb) => (
                 <View key={cb.id} style={{ borderRadius: 16, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 14, paddingHorizontal: 16 }}>
@@ -87,9 +88,9 @@ export function SubScreen() {
                     <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: tint(cb.color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
                       <Icon name={cb.icon} size={18} color={cb.color} />
                     </View>
-                    <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: t.text }}>{cb.name}</Text>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: cb.toneColor }}>₹{inr(cb.spent)}</Text>
-                    <Text style={{ fontSize: 12, color: t.faint }}> / ₹{inr(cb.budget)}</Text>
+                    <AppText style={{ flex: 1, fontSize: 14, fontWeight: '700', color: t.text }}>{cb.name}</AppText>
+                    <AppText style={{ fontSize: 13, fontWeight: '700', color: cb.toneColor }}>₹{inr(cb.spent)}</AppText>
+                    <AppText style={{ fontSize: 12, color: t.faint }}> / ₹{inr(cb.budget)}</AppText>
                   </View>
                   <View style={{ height: 7, borderRadius: 99, backgroundColor: t.card2, overflow: 'hidden' }}>
                     <View style={{ height: '100%', borderRadius: 99, width: pctW(cb.pct), backgroundColor: cb.toneColor }} />
@@ -102,7 +103,7 @@ export function SubScreen() {
 
         {sub === 'recurring' && (
           <>
-            <Text style={{ fontSize: 13, color: t.sub, marginBottom: 14, lineHeight: 19.5 }}>Bills and subscriptions that add themselves automatically on their due date.</Text>
+            <AppText style={{ fontSize: 13, color: t.sub, marginBottom: 14, lineHeight: 19.5 }}>Bills and subscriptions that add themselves automatically on their due date.</AppText>
             <View style={{ gap: 12 }}>
               {recurring.map((r) => {
                 const c = catById(r.cat);
@@ -112,10 +113,10 @@ export function SubScreen() {
                       <Icon name={c.icon} size={21} color={c.color} />
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={{ fontSize: 14.5, fontWeight: '800', color: t.text }}>{r.name}</Text>
-                      <Text style={{ fontSize: 12, color: t.faint, marginTop: 2 }}>{r.freq} · Due in {r.due} {r.due === 1 ? 'day' : 'days'}</Text>
+                      <AppText style={{ fontSize: 14.5, fontWeight: '800', color: t.text }}>{r.name}</AppText>
+                      <AppText style={{ fontSize: 12, color: t.faint, marginTop: 2 }}>{r.freq} · Due in {r.due} {r.due === 1 ? 'day' : 'days'}</AppText>
                     </View>
-                    <Text style={{ fontSize: 15, fontWeight: '800', color: t.text, marginRight: 4 }}>₹{inr(r.amount)}</Text>
+                    <AppText style={{ fontSize: 15, fontWeight: '800', color: t.text, marginRight: 4 }}>₹{inr(r.amount)}</AppText>
                     <Toggle on={!r.paused} onToggle={() => toggleRecur(r.id)} />
                   </View>
                 );
@@ -126,7 +127,7 @@ export function SubScreen() {
 
         {sub === 'export' && (
           <>
-            <Text style={{ fontSize: 13, color: t.sub, marginBottom: 16, lineHeight: 19.5 }}>Export your expenses to a CSV file you can open in Excel or Google Sheets. Everything is generated on-device.</Text>
+            <AppText style={{ fontSize: 13, color: t.sub, marginBottom: 16, lineHeight: 19.5 }}>Export your expenses to a CSV file you can open in Excel or Google Sheets. Everything is generated on-device.</AppText>
             <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden', marginBottom: 16 }}>
               {[
                 { label: 'Date range', value: 'This month', accent: true },
@@ -134,17 +135,17 @@ export function SubScreen() {
                 { label: 'Records', value: expenses.length + ' expenses', accent: false },
               ].map((row, i, arr) => (
                 <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, paddingHorizontal: 16, borderBottomWidth: i === arr.length - 1 ? 0 : 1, borderBottomColor: t.line }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', color: t.text }}>{row.label}</Text>
-                  <Text style={{ fontSize: 13.5, fontWeight: '700', color: row.accent ? t.accent : t.faint }}>{row.value}</Text>
+                  <AppText style={{ fontSize: 14, fontWeight: '600', color: t.text }}>{row.label}</AppText>
+                  <AppText style={{ fontSize: 13.5, fontWeight: '700', color: row.accent ? t.accent : t.faint }}>{row.value}</AppText>
                 </View>
               ))}
             </View>
             <View style={{ borderRadius: 14, backgroundColor: t.card2, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 18 }}>
-              <Text style={{ fontFamily: 'monospace', fontSize: 11, color: t.sub, lineHeight: 18 }}>{csvPreview}</Text>
+              <AppText style={{ fontFamily: 'monospace', fontSize: 11, color: t.sub, lineHeight: 18 }}>{csvPreview}</AppText>
             </View>
             <Press onPress={exportCsv} style={{ height: 54, borderRadius: 16, backgroundColor: t.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, shadowColor: t.accent, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5 }}>
               <Icon name="download" size={20} color={t.onAccent} strokeWidth={2.2} />
-              <Text style={{ fontSize: 16, fontWeight: '800', color: t.onAccent }}>Export CSV</Text>
+              <AppText style={{ fontSize: 16, fontWeight: '800', color: t.onAccent }}>Export CSV</AppText>
             </Press>
           </>
         )}

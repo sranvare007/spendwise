@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, Pressable, Dimensions } from 'react-native';
+import { View, Animated, Pressable, Dimensions } from 'react-native';
+import { AppText } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, ThemeKey, THEME_META } from '../theme';
 import { Icon } from '../icons';
@@ -27,8 +28,8 @@ export function ThemeSheet() {
       </Animated.View>
       <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: t.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 22, paddingHorizontal: 20, paddingBottom: insets.bottom + 30, transform: [{ translateY }] }}>
         <View style={{ width: 38, height: 5, borderRadius: 99, backgroundColor: t.line, alignSelf: 'center', marginBottom: 18 }} />
-        <Text style={{ fontSize: 17, fontWeight: '800', color: t.text, marginBottom: 4 }}>Choose a theme</Text>
-        <Text style={{ fontSize: 13, color: t.faint, marginBottom: 18 }}>Applies across the whole app, instantly.</Text>
+        <AppText style={{ fontSize: 17, fontWeight: '800', color: t.text, marginBottom: 4 }}>Choose a theme</AppText>
+        <AppText style={{ fontSize: 13, color: t.faint, marginBottom: 18 }}>Applies across the whole app, instantly.</AppText>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           {KEYS.map((k) => {
             const m = THEME_META[k];
@@ -41,7 +42,7 @@ export function ThemeSheet() {
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                   {active && <Icon name="check" size={14} color={t.accent} strokeWidth={2.6} />}
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: active ? t.accent : t.sub }}>{m.name}</Text>
+                  <AppText style={{ fontSize: 13, fontWeight: '700', color: active ? t.accent : t.sub }}>{m.name}</AppText>
                 </View>
               </Press>
             );

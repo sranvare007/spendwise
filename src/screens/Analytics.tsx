@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, ScrollView, Pressable } from 'react-native';
+import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Polyline, Path } from 'react-native-svg';
 import { useTheme, inr, hexA } from '../theme';
@@ -90,7 +91,7 @@ export function Analytics() {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 8 }}>
-        <Text style={{ fontSize: 28, fontWeight: '800', color: t.text }}>Analytics</Text>
+        <AppText style={{ fontSize: 28, fontWeight: '800', color: t.text }}>Analytics</AppText>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 130 }}>
         {/* Period segmented */}
@@ -99,7 +100,7 @@ export function Analytics() {
             const active = analyticsPeriod === k;
             return (
               <Press key={k} onPress={() => setAnalyticsPeriod(k)} style={{ flex: 1, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accent : 'transparent' }}>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{label}</Text>
+                <AppText style={{ fontSize: 13, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{label}</AppText>
               </Press>
             );
           })}
@@ -107,8 +108,8 @@ export function Analytics() {
 
         {/* Donut */}
         <View style={{ borderRadius: 20, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 20 }}>
-          <Text style={{ fontSize: 14, fontWeight: '800', color: t.text, marginBottom: 4 }}>Where it went</Text>
-          <Text style={{ fontSize: 12, color: t.faint, marginBottom: 12 }}>{v.periodLabel}</Text>
+          <AppText style={{ fontSize: 14, fontWeight: '800', color: t.text, marginBottom: 4 }}>Where it went</AppText>
+          <AppText style={{ fontSize: 12, color: t.faint, marginBottom: 12 }}>{v.periodLabel}</AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 18 }}>
             <View style={{ width: 150, height: 150 }}>
               <Svg width={150} height={150} viewBox="0 0 180 180" style={{ transform: [{ rotate: '-90deg' }] }}>
@@ -122,16 +123,16 @@ export function Analytics() {
                 ))}
               </Svg>
               <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }} pointerEvents="none">
-                <Text style={{ fontSize: 10, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.5 }}>{v.centerLabel}</Text>
-                <Text style={{ fontSize: 22, fontWeight: '800', color: t.text }}>₹{inr(v.centerNum)}</Text>
+                <AppText style={{ fontSize: 10, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.5 }}>{v.centerLabel}</AppText>
+                <AppText style={{ fontSize: 22, fontWeight: '800', color: t.text }}>₹{inr(v.centerNum)}</AppText>
               </View>
             </View>
             <View style={{ flex: 1, gap: 9 }}>
               {v.donutLegend.map((l) => (
                 <Pressable key={l.id} onPress={() => setDonutCat(donutCat === l.id ? null : l.id)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, opacity: l.opacity }}>
                   <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: l.color }} />
-                  <Text numberOfLines={1} style={{ fontSize: 12.5, fontWeight: '600', color: t.text, flex: 1 }}>{l.name}</Text>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: t.sub }}>{l.pct}%</Text>
+                  <AppText numberOfLines={1} style={{ fontSize: 12.5, fontWeight: '600', color: t.text, flex: 1 }}>{l.name}</AppText>
+                  <AppText style={{ fontSize: 12, fontWeight: '700', color: t.sub }}>{l.pct}%</AppText>
                 </Pressable>
               ))}
             </View>
@@ -143,8 +144,8 @@ export function Analytics() {
           {v.statTiles.map((tile) => (
             <View key={tile.label} style={{ width: '50%', paddingHorizontal: 6, marginBottom: 12 }}>
               <View style={{ borderRadius: 16, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 14, paddingHorizontal: 15 }}>
-                <Text style={{ fontSize: 11.5, fontWeight: '600', color: t.faint }}>{tile.label}</Text>
-                <Text style={{ fontSize: 20, fontWeight: '800', color: t.text, marginTop: 5 }}>{tile.value}</Text>
+                <AppText style={{ fontSize: 11.5, fontWeight: '600', color: t.faint }}>{tile.label}</AppText>
+                <AppText style={{ fontSize: 20, fontWeight: '800', color: t.text, marginTop: 5 }}>{tile.value}</AppText>
               </View>
             </View>
           ))}
@@ -152,14 +153,14 @@ export function Analytics() {
 
         {/* Bars */}
         <View style={{ borderRadius: 20, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 20, marginTop: 2 }}>
-          <Text style={{ fontSize: 14, fontWeight: '800', color: t.text }}>Daily spending</Text>
-          <Text style={{ fontSize: 12, color: t.faint, marginBottom: 18 }}>Last 7 days</Text>
+          <AppText style={{ fontSize: 14, fontWeight: '800', color: t.text }}>Daily spending</AppText>
+          <AppText style={{ fontSize: 12, color: t.faint, marginBottom: 18 }}>Last 7 days</AppText>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9, height: 130 }}>
             {v.barData.map((b, i) => (
               <View key={i} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
-                <Text style={{ fontSize: 9.5, fontWeight: '700', color: t.faint, marginBottom: 8 }}>{b.valLabel}</Text>
+                <AppText style={{ fontSize: 9.5, fontWeight: '700', color: t.faint, marginBottom: 8 }}>{b.valLabel}</AppText>
                 <View style={{ width: '100%', borderTopLeftRadius: 7, borderTopRightRadius: 7, borderBottomLeftRadius: 4, borderBottomRightRadius: 4, backgroundColor: b.isToday ? t.accent : hexA(t.accent, t.dark ? 0.45 : 0.32), height: pctW(b.h), minHeight: 5 }} />
-                <Text style={{ fontSize: 10, fontWeight: '700', color: b.isToday ? t.accent : t.faint, marginTop: 8 }}>{b.label}</Text>
+                <AppText style={{ fontSize: 10, fontWeight: '700', color: b.isToday ? t.accent : t.faint, marginTop: 8 }}>{b.label}</AppText>
               </View>
             ))}
           </View>
@@ -167,8 +168,8 @@ export function Analytics() {
 
         {/* Trend */}
         <View style={{ borderRadius: 20, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 20, marginTop: 14 }}>
-          <Text style={{ fontSize: 14, fontWeight: '800', color: t.text }}>Spending trend</Text>
-          <Text style={{ fontSize: 12, color: t.faint, marginBottom: 14 }}>7-day rolling</Text>
+          <AppText style={{ fontSize: 14, fontWeight: '800', color: t.text }}>Spending trend</AppText>
+          <AppText style={{ fontSize: 12, color: t.faint, marginBottom: 14 }}>7-day rolling</AppText>
           <Svg width="100%" height={100} viewBox="0 0 300 100" preserveAspectRatio="none">
             <Path d={v.trendArea} fill={t.accentSoft} />
             <Polyline points={v.trendPoints} fill="none" stroke={t.accent} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />

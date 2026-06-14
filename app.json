@@ -21,13 +21,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/adaptive-icon-foreground.png",
+        "backgroundImage": "./assets/adaptive-icon-background.png",
+        "backgroundColor": "#FFE4EF"
       },
       "package": "com.spendwise"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-asset",
@@ -39,7 +40,8 @@
         }
       ],
       "expo-sqlite",
-      "expo-updates"
+      "expo-updates",
+      "expo-font"
     ],
     "extra": {
       "eas": {

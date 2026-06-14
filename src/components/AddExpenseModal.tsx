@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, TextInput, ScrollView, Animated, Pressable, Dimensions } from 'react-native';
+import { View, TextInput, ScrollView, Animated, Pressable, Dimensions } from 'react-native';
+import { AppText } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, tint } from '../theme';
 import { Icon } from '../icons';
@@ -44,7 +45,7 @@ export function AddExpenseModal() {
           <View style={{ position: 'absolute', left: 0, right: 0, top: 11, alignItems: 'center' }}>
             <View style={{ width: 38, height: 5, borderRadius: 99, backgroundColor: t.line }} />
           </View>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: t.text }}>Add expense</Text>
+          <AppText style={{ fontSize: 17, fontWeight: '800', color: t.text }}>Add expense</AppText>
           <Press onPress={closeModal} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: t.card2, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="close" size={17} color={t.sub} strokeWidth={2.2} />
           </Press>
@@ -54,8 +55,8 @@ export function AddExpenseModal() {
           {/* Amount */}
           <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 26, fontWeight: '700', color: t.faint, marginBottom: 6 }}>₹</Text>
-              <Text style={{ fontSize: 52, fontWeight: '800', color: amt > 0 ? t.text : t.faint, lineHeight: 56 }}>{fmtAmount(draft.amount)}</Text>
+              <AppText style={{ fontSize: 26, fontWeight: '700', color: t.faint, marginBottom: 6 }}>₹</AppText>
+              <AppText style={{ fontSize: 52, fontWeight: '800', color: amt > 0 ? t.text : t.faint, lineHeight: 56 }}>{fmtAmount(draft.amount)}</AppText>
             </View>
           </View>
 
@@ -66,14 +67,14 @@ export function AddExpenseModal() {
                 const active = draft.wn === k;
                 return (
                   <Press key={k} onPress={() => setDraft({ wn: k })} style={{ minWidth: 62, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accent : 'transparent' }}>
-                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{k === 'NEED' ? 'Need' : 'Want'}</Text>
+                    <AppText style={{ fontSize: 12.5, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{k === 'NEED' ? 'Need' : 'Want'}</AppText>
                   </Press>
                 );
               })}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 13, borderRadius: 12, backgroundColor: t.card2 }}>
               <Icon name="cal" size={15} color={t.sub} />
-              <Text style={{ fontSize: 13, fontWeight: '700', color: t.sub }}>Today</Text>
+              <AppText style={{ fontSize: 13, fontWeight: '700', color: t.sub }}>Today</AppText>
             </View>
           </View>
 
@@ -83,11 +84,11 @@ export function AddExpenseModal() {
             onChangeText={(desc) => setDraft({ desc })}
             placeholder="What was it for?"
             placeholderTextColor={t.faint}
-            style={{ height: 50, paddingHorizontal: 16, borderRadius: 14, borderWidth: 1, borderColor: t.line, backgroundColor: t.card2, fontSize: 15, fontWeight: '600', color: t.text, marginBottom: 16 }}
+            style={{ height: 50, paddingHorizontal: 16, borderRadius: 14, borderWidth: 1, borderColor: t.line, backgroundColor: t.card2, fontSize: 15, color: t.text, marginBottom: 16, fontFamily: 'Montserrat_600SemiBold' }}
           />
 
           {/* Category */}
-          <Text style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.5, marginLeft: 2, marginBottom: 9 }}>Category</Text>
+          <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.5, marginLeft: 2, marginBottom: 9 }}>Category</AppText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginHorizontal: -20, marginBottom: 18 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingVertical: 2 }}>
             {CATS.map((c) => {
               const active = draft.cat === c.id;
@@ -96,7 +97,7 @@ export function AddExpenseModal() {
                   <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: tint(c.color, t.dark), alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
                     <Icon name={c.icon} size={19} color={c.color} />
                   </View>
-                  <Text style={{ fontSize: 10.5, fontWeight: '700', color: active ? t.accent : t.sub }}>{c.short}</Text>
+                  <AppText style={{ fontSize: 10.5, fontWeight: '700', color: active ? t.accent : t.sub }}>{c.short}</AppText>
                 </Press>
               );
             })}
@@ -109,7 +110,7 @@ export function AddExpenseModal() {
                 <Press onPress={() => (k === 'del' ? delKey() : pressKey(k))} style={{ height: 54, borderRadius: 15, backgroundColor: t.card2, alignItems: 'center', justifyContent: 'center' }}>
                   {k === 'del'
                     ? <Icon name="del" size={24} color={t.sub} />
-                    : <Text style={{ fontSize: 23, fontWeight: '700', color: t.text }}>{k}</Text>}
+                    : <AppText style={{ fontSize: 23, fontWeight: '700', color: t.text }}>{k}</AppText>}
                 </Press>
               </View>
             ))}
@@ -121,7 +122,7 @@ export function AddExpenseModal() {
             disabled={!canSave}
             style={{ height: 54, marginTop: 9, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: canSave ? t.accent : t.card2, ...(canSave ? { shadowColor: t.accent, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5 } : null) }}
           >
-            <Text style={{ fontSize: 16, fontWeight: '800', color: canSave ? t.onAccent : t.faint }}>{canSave ? 'Add ₹' + fmtAmount(draft.amount) : 'Enter amount & details'}</Text>
+            <AppText style={{ fontSize: 16, fontWeight: '800', color: canSave ? t.onAccent : t.faint }}>{canSave ? 'Add ₹' + fmtAmount(draft.amount) : 'Enter amount & details'}</AppText>
           </Press>
         </ScrollView>
       </Animated.View>

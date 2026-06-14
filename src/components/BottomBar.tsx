@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { AppText } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme';
 import { Icon, IconName } from '../icons';
@@ -27,7 +28,7 @@ export function BottomBar() {
     return (
       <Pressable key={item.key} onPress={() => setTab(item.key)} style={{ width: 54, alignItems: 'center', gap: 4, paddingVertical: 6 }}>
         <Icon name={item.icon} size={23} color={color} />
-        <Text style={{ fontSize: 10.5, fontWeight: '700', color }}>{item.label}</Text>
+        <AppText style={{ fontSize: 10.5, fontWeight: '700', color }}>{item.label}</AppText>
       </Pressable>
     );
   };
