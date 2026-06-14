@@ -1,0 +1,58 @@
+name: Android Build
+
+# Builds an installable release APK on the free GitHub-hosted runner (no paid
+# EAS Build minutes). Runs on every push/merge to main, and can be triggered
+# manually. android/ is gitignored (managed workflow) so it is regenerated with
+# `expo prebuild`; the release build is signed with the template debug keystore,
+# so no signing secrets are required.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel an in-progress build if a newer commit lands on the same ref.
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle (with caching)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spendwise-apk-${{ github.sha }}
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14
