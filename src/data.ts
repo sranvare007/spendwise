@@ -53,44 +53,8 @@ export const CAT_BUDGETS: Record<string, number> = {
   food: 6000, transport: 2000, shopping: 2500, entertainment: 1500, utilities: 3000, health: 2000,
 };
 
-export const DEFAULT_RECURRING: Recurring[] = [
-  { id: 'r1', name: 'Netflix', cat: 'entertainment', amount: 649, freq: 'Monthly', due: 3, paused: false },
-  { id: 'r2', name: 'Spotify', cat: 'entertainment', amount: 119, freq: 'Monthly', due: 8, paused: false },
-  { id: 'r3', name: 'Gym membership', cat: 'health', amount: 1500, freq: 'Monthly', due: 1, paused: false },
-  { id: 'r4', name: 'House rent', cat: 'housing', amount: 18000, freq: 'Monthly', due: 5, paused: false },
-  { id: 'r5', name: 'Broadband', cat: 'utilities', amount: 799, freq: 'Monthly', due: 12, paused: true },
-];
-
 export const DEFAULT_BUDGET = 15000;
 
 export function catById(id: string): Category {
   return CATS.find((c) => c.id === id) || CATS[CATS.length - 1];
-}
-
-// Sample expenses for first launch.
-export function seedExpenses(): Expense[] {
-  const now = new Date();
-  const at = (off: number, h: number, m: number) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() - off);
-    d.setHours(h, m, 0, 0);
-    return d.toISOString();
-  };
-  let id = 0;
-  const mk = (a: number, desc: string, c: string, wn: 'NEED' | 'WANT', date: string): Expense =>
-    ({ id: 's' + id++, amount: a, desc, cat: c, wn, date });
-  return [
-    mk(180, 'Morning latte', 'food', 'WANT', at(0, 8, 20)),
-    mk(85, 'Auto to office', 'transport', 'NEED', at(0, 9, 40)),
-    mk(260, 'Team lunch', 'food', 'NEED', at(0, 13, 15)),
-    mk(1240, 'Weekly groceries', 'food', 'NEED', at(1, 18, 30)),
-    mk(600, 'Movie tickets', 'entertainment', 'WANT', at(1, 20, 5)),
-    mk(499, 'Phone recharge', 'utilities', 'NEED', at(1, 11, 0)),
-    mk(119, 'Spotify', 'entertainment', 'WANT', at(2, 7, 0)),
-    mk(430, 'Dinner delivery', 'food', 'WANT', at(2, 21, 10)),
-    mk(899, 'New running tee', 'shopping', 'WANT', at(3, 16, 45)),
-    mk(1500, 'Gym membership', 'health', 'NEED', at(4, 7, 30)),
-    mk(2100, 'Electricity bill', 'utilities', 'NEED', at(5, 10, 0)),
-    mk(260, 'Uber home', 'transport', 'NEED', at(6, 22, 0)),
-  ];
 }
