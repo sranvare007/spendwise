@@ -45,6 +45,7 @@ export const CATS: Category[] = [
   { id: 'travel', name: 'Travel', short: 'Travel', color: '#21C0CE', icon: 'travel' },
   { id: 'personal', name: 'Personal Care', short: 'Personal', color: '#FF8FB1', icon: 'personal' },
   { id: 'education', name: 'Education', short: 'Education', color: '#8C7BFF', icon: 'education' },
+  { id: 'fuel', name: 'Fuel', short: 'Fuel', color: '#5BC47C', icon: 'fuel' },
   { id: 'other', name: 'Other', short: 'Other', color: '#9AA7B2', icon: 'other' },
 ];
 

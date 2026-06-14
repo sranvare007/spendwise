@@ -3,7 +3,7 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 export type IconName =
   | 'food' | 'transport' | 'shopping' | 'ent' | 'health' | 'utilities'
-  | 'housing' | 'education' | 'travel' | 'personal' | 'other'
+  | 'housing' | 'education' | 'travel' | 'personal' | 'fuel' | 'other'
   | 'search' | 'plus' | 'close' | 'check' | 'flame' | 'home' | 'chart'
   | 'bulb' | 'gear' | 'del' | 'cal' | 'chevL' | 'chevR' | 'palette'
   | 'bell' | 'lock' | 'download' | 'repeat' | 'tag' | 'bookmark'
@@ -47,6 +47,13 @@ function paths(name: IconName, s: string, sw: number, fill: string) {
       return [<Path key="0" {...common} d="M21.5 3.5L10.5 14M21.5 3.5l-6.8 17-3.9-7.2-7.2-3.9 17.9-5.9z" />];
     case 'personal':
       return [<Path key="0" {...common} d="M12 3l1.7 5.1L19 9.8l-5.3 1.7L12 17l-1.7-5.5L5 9.8l5.3-1.7L12 3z" />];
+    case 'fuel':
+      return [
+        <Path key="0" {...common} d="M5 20V6a2 2 0 012-2h4a2 2 0 012 2v14" />,
+        <Path key="1" {...common} d="M3.5 20.5h11" />,
+        <Rect key="2" {...common} x={7} y={7} width={4} height={3} rx={0.5} />,
+        <Path key="3" {...common} d="M13 10h2.5A1.5 1.5 0 0117 11.5V16a1.5 1.5 0 003 0V9l-2.2-2.2" />,
+      ];
     case 'other':
       return [<Circle key="0" {...common} cx={12} cy={12} r={8.5} />, <Path key="1" {...common} d="M8.2 12h7.6" />];
     case 'search':
