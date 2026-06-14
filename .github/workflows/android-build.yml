@@ -20,6 +20,8 @@ jobs:
   build:
     name: Build release APK
     runs-on: ubuntu-latest
+    # Safety net: a misconfigured/runaway native build won't burn hours of minutes.
+    timeout-minutes: 60
     # Mapped from secrets so the Telegram step can be skipped when unset.
     env:
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -49,9 +51,12 @@ jobs:
       - name: Generate native Android project
         run: npx expo prebuild --platform android --no-install
 
+      # Limit to arm64-v8a only. RN 0.83 + New Architecture compiles native C++
+      # from source; building all four ABIs on a 2-core runner takes ~1h+. A
+      # single modern ABI covers virtually all real devices and cuts that ~4x.
       - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
