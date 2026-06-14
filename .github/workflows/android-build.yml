@@ -107,8 +107,11 @@ jobs:
 
       # Sends the download link to Telegram. Skipped if the secrets are not set,
       # so the build still succeeds before you finish the one-time bot setup.
+      # Non-fatal: a notification failure must not fail an otherwise-good build —
+      # the APK is always on litterbox and in the run summary.
       - name: Notify via Telegram
         if: ${{ env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != '' }}
+        continue-on-error: true
         env:
           LITTERBOX_URL: ${{ steps.litterbox.outputs.url }}
           COMMIT: ${{ github.sha }}
@@ -116,8 +119,15 @@ jobs:
         run: |
           MSG=$(printf '✅ SpendWise Android build ready\n\nBranch: %s\nCommit: %s\n\n📦 %s\n\n(link expires in 72h)' \
             "$BRANCH" "${COMMIT:0:7}" "$LITTERBOX_URL")
-          curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          HTTP=$(curl -sS -o /tmp/tg.json -w '%{http_code}' \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
             --data-urlencode "text=${MSG}" \
-            --data "disable_web_page_preview=true" > /dev/null
-          echo "Telegram notification sent."
+            --data "disable_web_page_preview=true")
+          echo "Telegram HTTP $HTTP"
+          cat /tmp/tg.json; echo
+          if [ "$HTTP" = "200" ]; then
+            echo "Telegram notification sent."
+          else
+            echo "::warning::Telegram notification failed (HTTP $HTTP). APK: $LITTERBOX_URL"
+          fi

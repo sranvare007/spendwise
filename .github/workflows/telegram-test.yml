@@ -1,0 +1,36 @@
+name: Telegram Test
+
+# Manual-only helper to validate the Telegram bot secrets without running a full
+# Android build. getMe checks the token; sendMessage checks the chat id and
+# prints the exact API error (e.g. "chat not found") so config issues are quick
+# to diagnose. Delete this workflow once delivery is confirmed working.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Validate Telegram bot
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - name: Check secrets are present
+        run: |
+          [ -n "$TELEGRAM_BOT_TOKEN" ] && echo "bot token: set" || echo "::error::TELEGRAM_BOT_TOKEN is empty"
+          [ -n "$TELEGRAM_CHAT_ID" ] && echo "chat id: set (length ${#TELEGRAM_CHAT_ID})" || echo "::error::TELEGRAM_CHAT_ID is empty"
+
+      - name: getMe (validates token)
+        run: |
+          echo "HTTP $(curl -sS -o /tmp/me.json -w '%{http_code}' "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe")"
+          cat /tmp/me.json; echo
+
+      - name: sendMessage (validates chat id)
+        run: |
+          HTTP=$(curl -sS -o /tmp/send.json -w '%{http_code}' \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=SpendWise CI test ✅")
+          echo "HTTP $HTTP"
+          cat /tmp/send.json; echo
