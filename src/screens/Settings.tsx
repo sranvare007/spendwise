@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ScrollView } from 'react-native';
 import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,11 +7,29 @@ import { Icon, IconName } from '../icons';
 import { Press } from '../components/Press';
 import { Toggle } from '../components/Toggle';
 import { useStore, CATS, Settings as SettingsType, Sub } from '../store';
+import { getBiometricCapability, BioCapability } from '../biometric';
 
 export function Settings() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { theme, setTheme, budget, recurring, settings, toggleSetting, setSub } = useStore();
+  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, setSub } = useStore();
+
+  const [bioCap, setBioCap] = useState<BioCapability | null>(null);
+  useEffect(() => {
+    let alive = true;
+    getBiometricCapability().then((c) => { if (alive) setBioCap(c); });
+    return () => { alive = false; };
+  }, []);
+
+  const bioLabel = bioCap?.label ?? 'Biometric';
+  const bioOn = settings.biometric;
+  // Allow turning the lock off even if hardware is gone; only block turning it on.
+  const bioInteractive = bioOn || (bioCap?.available ?? false);
+  const bioDetail = bioOn
+    ? `Unlock with ${bioLabel}`
+    : bioCap && !bioCap.available
+      ? (bioCap.reason ?? 'Unavailable on this device')
+      : `Require ${bioLabel} to open the app`;
 
   const manageRows: { icon: IconName; color: string; label: string; detail: string; sub: Sub }[] = [
     { icon: 'target', color: '#07CB73', label: 'Budgets', detail: '₹' + inr(budget), sub: 'budgets' },
@@ -24,7 +42,6 @@ export function Settings() {
     { icon: 'bell', color: '#FF7A5C', label: 'Budget alerts', key: 'budgetAlerts' },
     { icon: 'cal', color: '#4C9AFF', label: 'Weekly summary', key: 'weeklySummary' },
     { icon: 'repeat', color: '#2BD4A8', label: 'Recurring reminders', key: 'recurringReminders' },
-    { icon: 'lock', color: '#8C7BFF', label: 'Biometric lock', key: 'biometric' },
   ];
 
   const themeKeys: ThemeKey[] = ['mint', 'midnight', 'sunburst'];
@@ -97,6 +114,21 @@ export function Settings() {
               <Toggle on={settings[r.key]} onToggle={() => toggleSetting(r.key)} />
             </View>
           ))}
+        </View>
+
+        {/* Security */}
+        <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Security</AppText>
+        <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16, opacity: bioInteractive ? 1 : 0.55 }}>
+            <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: tint('#8C7BFF', t.dark), alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="lock" size={18} color="#8C7BFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText style={{ fontSize: 14.5, fontWeight: '600', color: t.text }}>{bioLabel} lock</AppText>
+              <AppText style={{ fontSize: 12, color: t.faint, marginTop: 2 }}>{bioDetail}</AppText>
+            </View>
+            <Toggle on={bioOn} onToggle={() => { if (bioInteractive) setBiometric(!bioOn); }} />
+          </View>
         </View>
 
         <AppText style={{ textAlign: 'center', fontSize: 12, color: t.faint, marginTop: 26 }}>SpendWise v1.0 · Made with the GoTo palette</AppText>

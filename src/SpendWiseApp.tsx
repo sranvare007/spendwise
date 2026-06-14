@@ -12,9 +12,10 @@ import { AddExpenseModal } from './components/AddExpenseModal';
 import { ThemeSheet } from './components/ThemeSheet';
 import { Toast } from './components/Toast';
 import { Confetti } from './components/Confetti';
+import { LockScreen } from './components/LockScreen';
 
 function Root() {
-  const { ready, theme, tab, sub, modalOpen, themeSheetOpen } = useStore();
+  const { ready, theme, tab, sub, modalOpen, themeSheetOpen, locked } = useStore();
   const t = THEMES[theme];
 
   return (
@@ -40,6 +41,7 @@ function Root() {
             <Confetti />
           </>
         )}
+        {locked && <LockScreen />}
       </View>
     </ThemeContext.Provider>
   );

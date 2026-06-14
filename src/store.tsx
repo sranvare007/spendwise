@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { Share } from 'react-native';
+import { Share, AppState } from 'react-native';
 import { ThemeKey } from './theme';
+import { getBiometricCapability, runAuth, AuthOutcome } from './biometric';
 import { monthKey } from './utils';
 import { Expense, Recurring, Draft, DEFAULT_BUDGET, catById, CATS } from './data';
 import { getDatabase } from './db/database';
@@ -53,6 +54,7 @@ interface StoreValue {
   recurring: Recurring[];
   toast: Toast | null;
   confettiKey: number;
+  locked: boolean;
   setFilter: (patch: Partial<Filter>) => void;
   setTab: (t: Tab) => void;
   setSub: (s: Sub) => void;
@@ -67,6 +69,8 @@ interface StoreValue {
   saveExpense: () => void;
   deleteExpense: (id: string) => void;
   toggleSetting: (key: keyof Settings) => void;
+  setBiometric: (enabled: boolean) => void;
+  requestUnlock: () => Promise<AuthOutcome>;
   changeBudget: (delta: number) => void;
   toggleRecur: (id: string) => void;
   toggleInsight: (id: string) => void;
@@ -100,8 +104,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [recurring, setRecurring] = useState<Recurring[]>([]);
   const [toast, setToast] = useState<Toast | null>(null);
   const [confettiKey, setConfettiKey] = useState(0);
+  const [locked, setLocked] = useState(false);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Mirrors settings.biometric for the AppState listener (avoids stale closures).
+  const biometricRef = useRef(false);
 
   // ---- load from SQLite ----
   useEffect(() => {
@@ -114,7 +121,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (prefs.theme) setThemeState(prefs.theme as ThemeKey);
         if (typeof prefs.budget === 'number') setBudget(prefs.budget);
         if (prefs.filter) setFilterState({ ...DEFAULT_FILTER, ...(prefs.filter as Filter) });
-        if (prefs.settings) setSettings({ ...DEFAULT_SETTINGS, ...(prefs.settings as Settings) });
+        const loadedSettings = prefs.settings ? { ...DEFAULT_SETTINGS, ...(prefs.settings as Settings) } : DEFAULT_SETTINGS;
+        setSettings(loadedSettings);
+        biometricRef.current = loadedSettings.biometric;
+        // Lock on cold start when the biometric lock is enabled.
+        if (loadedSettings.biometric) setLocked(true);
         if (prefs.savedInsights) setSavedInsights(prefs.savedInsights as Record<string, boolean>);
       } catch {
         // leave defaults; UI still functions
@@ -122,6 +133,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setReady(true);
     })();
     return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
+  }, []);
+
+  // ---- re-lock when the app is sent to the background ----
+  // Only 'background' (not 'inactive') so the system biometric prompt — which
+  // briefly makes the app inactive — does not itself trigger a re-lock.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'background' && biometricRef.current) setLocked(true);
+    });
+    return () => sub.remove();
   }, []);
 
   const setFilter = useCallback((patch: Partial<Filter>) => {
@@ -198,6 +219,50 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setSettings((s) => { const next = { ...s, [key]: !s[key] }; writeDb((db) => setPref(db, 'settings', next)); return next; });
   }, []);
 
+  const persistBiometric = useCallback((on: boolean) => {
+    biometricRef.current = on;
+    setSettings((s) => { const next = { ...s, biometric: on }; writeDb((db) => setPref(db, 'settings', next)); return next; });
+  }, []);
+
+  // Toggle the biometric lock. Enabling requires a successful auth so we never
+  // lock the user out behind a sensor they cannot pass.
+  const setBiometric = useCallback(async (enabled: boolean) => {
+    if (!enabled) {
+      persistBiometric(false);
+      setLocked(false);
+      showToast('Biometric lock disabled.', 'warn');
+      return;
+    }
+    const cap = await getBiometricCapability();
+    if (!cap.available) {
+      showToast(cap.reason ?? 'Biometric lock is unavailable on this device.', 'bad');
+      return;
+    }
+    const auth = await runAuth(`Enable ${cap.label} lock`);
+    if (!auth.ok) {
+      showToast(auth.message ?? 'Could not enable biometric lock.', 'warn');
+      return;
+    }
+    persistBiometric(true);
+    showToast(`${cap.label} lock enabled.`, 'good');
+  }, [persistBiometric, showToast]);
+
+  // Called from the lock screen. If biometrics were removed in OS settings after
+  // the lock was enabled we fail OPEN (unlock + disable) so local data is never
+  // permanently trapped — there is no remote secret to protect here.
+  const requestUnlock = useCallback(async (): Promise<AuthOutcome> => {
+    const cap = await getBiometricCapability();
+    if (!cap.available) {
+      persistBiometric(false);
+      setLocked(false);
+      showToast(cap.reason ?? 'Biometrics unavailable — lock turned off.', 'warn');
+      return { ok: true };
+    }
+    const auth = await runAuth('Unlock SpendWise');
+    if (auth.ok) setLocked(false);
+    return auth;
+  }, [persistBiometric, showToast]);
+
   const changeBudget = useCallback((delta: number) => {
     setBudget((b) => { const next = Math.max(1000, b + delta); writeDb((db) => setPref(db, 'budget', next)); return next; });
   }, []);
@@ -231,7 +296,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const value: StoreValue = {
     ready, expenses, filter, tab, sub, modalOpen, themeSheetOpen, theme, budget, draft,
-    analyticsPeriod, donutCat, settings, savedInsights, recurring, toast, confettiKey,
+    analyticsPeriod, donutCat, settings, savedInsights, recurring, toast, confettiKey, locked,
     setFilter,
     setTab: (t) => { setTabState(t); setSubState(null); },
     setSub: setSubState,
@@ -239,7 +304,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     closeModal: () => setModalOpen(false),
     openThemeSheet: () => setThemeSheetOpen(true),
     closeThemeSheet: () => setThemeSheetOpen(false),
-    setTheme, setDraft, pressKey, delKey, saveExpense, deleteExpense, toggleSetting, changeBudget,
+    setTheme, setDraft, pressKey, delKey, saveExpense, deleteExpense, toggleSetting,
+    setBiometric, requestUnlock, changeBudget,
     toggleRecur, toggleInsight, setAnalyticsPeriod, setDonutCat, exportCsv,
   };
 

@@ -35,13 +35,20 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#ffffff",
-          "image": "./assets/splash-icon.png"
+          "backgroundColor": "#FFE4EF",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 320
         }
       ],
       "expo-sqlite",
       "expo-updates",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow SpendWise to use Face ID to unlock the app."
+        }
+      ]
     ],
     "extra": {
       "eas": {
