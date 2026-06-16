@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { View, ScrollView, Animated } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { View, ScrollView, Animated, TextInput } from 'react-native';
 import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, tint } from '../theme';
-import { Icon } from '../icons';
+import { Icon, IconName, CATEGORY_ICONS } from '../icons';
 import { Press } from '../components/Press';
 import { Toggle } from '../components/Toggle';
-import { useStore, CATS, CAT_BUDGETS, catById } from '../store';
+import { useStore, CAT_BUDGETS, CATEGORY_COLORS, catById } from '../store';
 import { monthKey, numericDate, pctW } from '../utils';
 
 export function SubScreen() {
@@ -27,7 +27,7 @@ export function SubScreen() {
     return { spent: sp, left: Math.max(0, budget - sp), monthExp: me };
   }, [expenses, budget]);
 
-  const title = sub === 'budgets' ? 'Budgets' : sub === 'recurring' ? 'Recurring' : sub === 'export' ? 'Export data' : '';
+  const title = sub === 'budgets' ? 'Budgets' : sub === 'recurring' ? 'Recurring' : sub === 'export' ? 'Export data' : sub === 'categories' ? 'Categories' : '';
 
   const catBudgets = useMemo(() =>
     Object.keys(CAT_BUDGETS).map((id) => {
@@ -149,7 +149,101 @@ export function SubScreen() {
             </Press>
           </>
         )}
+
+        {sub === 'categories' && <CategoriesManager />}
       </ScrollView>
     </Animated.View>
+  );
+}
+
+// List of all categories plus an inline form to create a custom one.
+function CategoriesManager() {
+  const t = useTheme();
+  const { categories, addCategory } = useStore();
+
+  const [name, setName] = useState('');
+  const [icon, setIcon] = useState<IconName | null>(null);
+  const [color, setColor] = useState<string>(CATEGORY_COLORS[0]);
+
+  const canSave = name.trim().length > 0 && icon !== null;
+
+  const onSave = () => {
+    if (!canSave || icon === null) return;
+    addCategory({ name, icon, color });
+    setName('');
+    setIcon(null);
+    setColor(CATEGORY_COLORS[0]);
+  };
+
+  return (
+    <>
+      {/* Existing categories */}
+      <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10, marginLeft: 4 }}>Your categories</AppText>
+      <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden', marginBottom: 24 }}>
+        {categories.map((c, i) => (
+          <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 13, paddingHorizontal: 16, borderBottomWidth: i === categories.length - 1 ? 0 : 1, borderBottomColor: t.line }}>
+            <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: tint(c.color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={c.icon} size={19} color={c.color} />
+            </View>
+            <AppText style={{ flex: 1, fontSize: 14.5, fontWeight: '700', color: t.text }}>{c.name}</AppText>
+            <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: c.color }} />
+          </View>
+        ))}
+      </View>
+
+      {/* Create new */}
+      <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10, marginLeft: 4 }}>Create new</AppText>
+      <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 16 }}>
+        {/* Preview + name */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 16 }}>
+          <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: tint(color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name={icon ?? 'tag'} size={24} color={color} />
+          </View>
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="Category name"
+            placeholderTextColor={t.faint}
+            maxLength={24}
+            style={{ flex: 1, height: 48, paddingHorizontal: 14, borderRadius: 13, borderWidth: 1, borderColor: t.line, backgroundColor: t.card2, fontSize: 15, color: t.text, fontFamily: 'Montserrat_600SemiBold' }}
+          />
+        </View>
+
+        {/* Color picker */}
+        <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.5, marginLeft: 2, marginBottom: 9 }}>Color</AppText>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 18 }}>
+          {CATEGORY_COLORS.map((c) => {
+            const active = color === c;
+            return (
+              <Press key={c} onPress={() => setColor(c)} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c, alignItems: 'center', justifyContent: 'center', borderWidth: active ? 3 : 0, borderColor: t.bg }}>
+                {active && <Icon name="check" size={15} color="#fff" strokeWidth={2.8} />}
+              </Press>
+            );
+          })}
+        </View>
+
+        {/* Icon picker */}
+        <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.5, marginLeft: 2, marginBottom: 9 }}>Icon</AppText>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+          {CATEGORY_ICONS.map((ic) => {
+            const active = icon === ic;
+            return (
+              <Press key={ic} onPress={() => setIcon(ic)} style={{ width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? tint(color, t.dark) : t.card2, borderWidth: 1.5, borderColor: active ? color : 'transparent' }}>
+                <Icon name={ic} size={21} color={active ? color : t.sub} />
+              </Press>
+            );
+          })}
+        </View>
+
+        <Press
+          onPress={onSave}
+          disabled={!canSave}
+          style={{ height: 52, borderRadius: 15, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, backgroundColor: canSave ? t.accent : t.card2, ...(canSave ? { shadowColor: t.accent, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 } : null) }}
+        >
+          <Icon name="plus" size={19} color={canSave ? t.onAccent : t.faint} strokeWidth={2.4} />
+          <AppText style={{ fontSize: 15.5, fontWeight: '800', color: canSave ? t.onAccent : t.faint }}>{canSave ? 'Add category' : 'Name & pick an icon'}</AppText>
+        </Press>
+      </View>
+    </>
   );
 }

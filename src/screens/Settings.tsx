@@ -1,18 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, Alert } from 'react-native';
 import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, tint, inr, ThemeKey, THEME_META } from '../theme';
 import { Icon, IconName } from '../icons';
 import { Press } from '../components/Press';
 import { Toggle } from '../components/Toggle';
-import { useStore, CATS, Settings as SettingsType, Sub } from '../store';
+import { useStore, Settings as SettingsType, Sub } from '../store';
 import { getBiometricCapability, BioCapability } from '../biometric';
 
 export function Settings() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, setSub } = useStore();
+  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, setSub, expenses, categories, clearExpenses } = useStore();
+
+  const confirmClear = () => {
+    if (expenses.length === 0) { clearExpenses(); return; }
+    Alert.alert(
+      'Clear expense data?',
+      `This permanently deletes all ${expenses.length} expenses. This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Clear all', style: 'destructive', onPress: clearExpenses },
+      ],
+    );
+  };
 
   const [bioCap, setBioCap] = useState<BioCapability | null>(null);
   useEffect(() => {
@@ -34,7 +46,7 @@ export function Settings() {
   const manageRows: { icon: IconName; color: string; label: string; detail: string; sub: Sub }[] = [
     { icon: 'target', color: '#07CB73', label: 'Budgets', detail: '₹' + inr(budget), sub: 'budgets' },
     { icon: 'repeat', color: '#5B8DEF', label: 'Recurring expenses', detail: recurring.filter((r) => !r.paused).length + ' active', sub: 'recurring' },
-    { icon: 'tag', color: '#C77DFF', label: 'Categories', detail: String(CATS.length), sub: 'budgets' },
+    { icon: 'tag', color: '#C77DFF', label: 'Categories', detail: String(categories.length), sub: 'categories' },
     { icon: 'download', color: '#FFB23E', label: 'Export data', detail: 'CSV', sub: 'export' },
   ];
 
@@ -100,6 +112,13 @@ export function Settings() {
               <Icon name="chevR" size={14} color={t.faint} strokeWidth={2.4} />
             </Press>
           ))}
+          <Press onPress={confirmClear} style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: t.line }}>
+            <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: tint('#FF5C5C', t.dark), alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="trash" size={18} color="#FF5C5C" />
+            </View>
+            <AppText style={{ flex: 1, fontSize: 14.5, fontWeight: '600', color: '#FF5C5C' }}>Clear expense data</AppText>
+            <AppText style={{ fontSize: 13, fontWeight: '700', color: t.faint }}>{expenses.length}</AppText>
+          </Press>
         </View>
 
         {/* Notifications */}

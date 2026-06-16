@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, tint } from '../theme';
 import { Icon } from '../icons';
 import { Press } from './Press';
-import { useStore, CATS } from '../store';
+import { useStore } from '../store';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -21,7 +21,7 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
 export function AddExpenseModal() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { draft, setDraft, pressKey, delKey, saveExpense, closeModal } = useStore();
+  const { draft, setDraft, pressKey, delKey, saveExpense, closeModal, categories } = useStore();
 
   const slide = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -90,7 +90,7 @@ export function AddExpenseModal() {
           {/* Category */}
           <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.5, marginLeft: 2, marginBottom: 9 }}>Category</AppText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginHorizontal: -20, marginBottom: 18 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingVertical: 2 }}>
-            {CATS.map((c) => {
+            {categories.map((c) => {
               const active = draft.cat === c.id;
               return (
                 <Press key={c.id} onPress={() => setDraft({ cat: c.id })} style={{ width: 66, alignItems: 'center', paddingVertical: 8, paddingHorizontal: 4, borderRadius: 16, backgroundColor: active ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: active ? t.accent : 'transparent' }}>

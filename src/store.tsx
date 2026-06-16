@@ -3,15 +3,19 @@ import { Share, AppState } from 'react-native';
 import { ThemeKey } from './theme';
 import { getBiometricCapability, runAuth, AuthOutcome } from './biometric';
 import { monthKey } from './utils';
-import { Expense, Recurring, Draft, DEFAULT_BUDGET, catById, CATS } from './data';
+import { Expense, Recurring, Draft, Category, DEFAULT_BUDGET, catById, CATS, setCategoryRegistry } from './data';
+import { IconName } from './icons';
 import { getDatabase } from './db/database';
 import {
-  getExpenses, insertExpense, softDeleteExpense, getRecurring, setRecurringPaused, getAllPrefs, setPref,
+  getExpenses, insertExpense, softDeleteExpense, clearAllExpenses, getRecurring, setRecurringPaused,
+  getAllPrefs, setPref, getCategories, insertCategory,
 } from './db/repositories';
 
 // Re-export shared data so existing screen imports keep working.
-export { CATS, CAT_BUDGETS, catById, DEFAULT_BUDGET } from './data';
+export { CATS, CAT_BUDGETS, CATEGORY_COLORS, catById, DEFAULT_BUDGET } from './data';
 export type { Category, Expense, Recurring, Draft } from './data';
+
+export interface NewCategoryInput { name: string; icon: IconName; color: string; }
 
 export interface Settings {
   budgetAlerts: boolean;
@@ -21,7 +25,7 @@ export interface Settings {
 }
 
 export type Tab = 'home' | 'analytics' | 'insights' | 'settings';
-export type Sub = 'budgets' | 'recurring' | 'export' | null;
+export type Sub = 'budgets' | 'recurring' | 'export' | 'categories' | null;
 export type RangeKey = 'today' | 'week' | 'month' | 'all';
 export type Period = 'week' | 'month' | '6m';
 export interface Filter { range: RangeKey; cat: string; wn: 'all' | 'NEED' | 'WANT'; q: string; }
@@ -39,6 +43,7 @@ function writeDb(fn: (db: Awaited<ReturnType<typeof getDatabase>>) => Promise<vo
 interface StoreValue {
   ready: boolean;
   expenses: Expense[];
+  categories: Category[];
   filter: Filter;
   tab: Tab;
   sub: Sub;
@@ -68,6 +73,8 @@ interface StoreValue {
   delKey: () => void;
   saveExpense: () => void;
   deleteExpense: (id: string) => void;
+  clearExpenses: () => void;
+  addCategory: (input: NewCategoryInput) => void;
   toggleSetting: (key: keyof Settings) => void;
   setBiometric: (enabled: boolean) => void;
   requestUnlock: () => Promise<AuthOutcome>;
@@ -89,6 +96,7 @@ export const useStore = () => {
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categories, setCategories] = useState<Category[]>(CATS);
   const [filter, setFilterState] = useState<Filter>(DEFAULT_FILTER);
   const [tab, setTabState] = useState<Tab>('home');
   const [sub, setSubState] = useState<Sub>(null);
@@ -115,9 +123,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const db = await getDatabase();
-        const [exp, rec, prefs] = await Promise.all([getExpenses(db), getRecurring(db), getAllPrefs(db)]);
+        const [exp, rec, prefs, cats] = await Promise.all([getExpenses(db), getRecurring(db), getAllPrefs(db), getCategories(db)]);
         setExpenses(exp);
         setRecurring(rec);
+        if (cats.length) { setCategories(cats); setCategoryRegistry(cats); }
         if (prefs.theme) setThemeState(prefs.theme as ThemeKey);
         if (typeof prefs.budget === 'number') setBudget(prefs.budget);
         if (prefs.filter) setFilterState({ ...DEFAULT_FILTER, ...(prefs.filter as Filter) });
@@ -215,6 +224,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     showToast('Expense deleted.', 'warn');
   }, [showToast]);
 
+  const clearExpenses = useCallback(() => {
+    setExpenses((arr) => {
+      if (arr.length === 0) {
+        showToast('No expenses to clear.', 'warn');
+        return arr;
+      }
+      writeDb((db) => clearAllExpenses(db));
+      showToast('Cleared ' + arr.length + ' expenses.', 'warn');
+      return [];
+    });
+  }, [showToast]);
+
+  const addCategory = useCallback((input: NewCategoryInput) => {
+    const name = input.name.trim();
+    if (!name) return;
+    const short = (name.split(/\s+/)[0] || name).slice(0, 12);
+    const cat: Category = { id: 'c' + Date.now(), name, short, color: input.color, icon: input.icon };
+    setCategories((arr) => { const next = [...arr, cat]; setCategoryRegistry(next); return next; });
+    writeDb((db) => insertCategory(db, cat));
+    showToast('Category "' + name + '" added.', 'good');
+  }, [showToast]);
+
   const toggleSetting = useCallback((key: keyof Settings) => {
     setSettings((s) => { const next = { ...s, [key]: !s[key] }; writeDb((db) => setPref(db, 'settings', next)); return next; });
   }, []);
@@ -295,7 +326,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [expenses, showToast]);
 
   const value: StoreValue = {
-    ready, expenses, filter, tab, sub, modalOpen, themeSheetOpen, theme, budget, draft,
+    ready, expenses, categories, filter, tab, sub, modalOpen, themeSheetOpen, theme, budget, draft,
     analyticsPeriod, donutCat, settings, savedInsights, recurring, toast, confettiKey, locked,
     setFilter,
     setTab: (t) => { setTabState(t); setSubState(null); },
@@ -304,7 +335,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     closeModal: () => setModalOpen(false),
     openThemeSheet: () => setThemeSheetOpen(true),
     closeThemeSheet: () => setThemeSheetOpen(false),
-    setTheme, setDraft, pressKey, delKey, saveExpense, deleteExpense, toggleSetting,
+    setTheme, setDraft, pressKey, delKey, saveExpense, deleteExpense, clearExpenses, addCategory, toggleSetting,
     setBiometric, requestUnlock, changeBudget,
     toggleRecur, toggleInsight, setAnalyticsPeriod, setDonutCat, exportCsv,
   };

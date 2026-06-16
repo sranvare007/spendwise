@@ -56,6 +56,31 @@ export const CAT_BUDGETS: Record<string, number> = {
 
 export const DEFAULT_BUDGET = 15000;
 
+// Accent colors offered when creating a custom category.
+export const CATEGORY_COLORS: string[] = [
+  // Reds / pinks
+  '#FF5A5A', '#FF7A5C', '#FF6B9D', '#FF5C9D', '#FF8FB1', '#E0457B',
+  // Purples / violets
+  '#C77DFF', '#A66BFF', '#8C7BFF', '#7C5CFF', '#6C63FF',
+  // Blues
+  '#5B8DEF', '#4C9AFF', '#3B82F6', '#2D6CDF', '#21C0CE',
+  // Teals / greens
+  '#17C3B2', '#2BD4A8', '#07CB73', '#2EB872', '#5BC47C', '#9BD45B',
+  // Yellows / oranges / browns
+  '#F4C20D', '#FFB23E', '#FF9F1C', '#F2784B', '#B5784F', '#9AA7B2',
+];
+
+// Live registry of all categories (system + custom). The store replaces this
+// once categories are loaded from SQLite so synchronous catById() lookups in
+// render paths resolve custom categories too — without prop-drilling everywhere.
+let REGISTRY: Category[] = [...CATS];
+
+export function setCategoryRegistry(cats: Category[]): void {
+  if (cats.length) REGISTRY = cats;
+}
+
 export function catById(id: string): Category {
-  return CATS.find((c) => c.id === id) || CATS[CATS.length - 1];
+  return REGISTRY.find((c) => c.id === id)
+    || REGISTRY.find((c) => c.id === 'other')
+    || REGISTRY[REGISTRY.length - 1];
 }
