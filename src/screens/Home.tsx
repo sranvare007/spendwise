@@ -5,13 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, hexA, tint } from '../theme';
 import { Icon, IconName } from '../icons';
 import { Press } from '../components/Press';
-import { useStore, CATS, catById } from '../store';
+import { useStore, catById } from '../store';
 import { monthKey, monthName, startOf, timeFmt, shortDate, pctW, RangeKey } from '../utils';
 
 export function Home() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { expenses, filter, setFilter, theme, budget, openThemeSheet } = useStore();
+  const { expenses, categories, filter, setFilter, theme, budget, openThemeSheet } = useStore();
 
   const { monthExp, spent } = useMemo(() => {
     const tm = monthKey(new Date().toISOString());
@@ -169,7 +169,7 @@ export function Home() {
 
         {/* Category chips */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, marginHorizontal: -20 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 20, paddingVertical: 2 }}>
-          {[{ id: 'all', short: 'All', icon: null as IconName | null }, ...CATS].map((c) => {
+          {[{ id: 'all', short: 'All', icon: null as IconName | null }, ...categories].map((c) => {
             const active = filter.cat === c.id;
             return (
               <Press key={c.id} onPress={() => setFilter({ cat: c.id })} style={{ flexDirection: 'row', alignItems: 'center', height: 36, paddingHorizontal: 14, borderRadius: 99, backgroundColor: active ? t.accentSoft : t.card, borderWidth: 1.5, borderColor: active ? t.accent : t.line }}>

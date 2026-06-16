@@ -75,6 +75,12 @@ export async function restoreExpense(db: DB, id: string): Promise<void> {
   await db.runAsync('UPDATE expenses SET is_deleted = 0, deleted_at = NULL, updated_at = ? WHERE id = ?', now, id);
 }
 
+// Permanently removes every expense. Unlike softDeleteExpense this is not
+// recoverable — used by the "clear data" action in Settings.
+export async function clearAllExpenses(db: DB): Promise<void> {
+  await db.runAsync('DELETE FROM expenses');
+}
+
 // ---------- Recurring subscriptions ----------
 export async function getRecurring(db: DB): Promise<Recurring[]> {
   const rows = await db.getAllAsync<RecurringRow>(
@@ -94,6 +100,19 @@ export async function getCategories(db: DB): Promise<(Category & { budget: numbe
     'SELECT id, name, short, icon, color_hex, budget_amount FROM categories ORDER BY sort_order ASC',
   );
   return rows.map((r) => ({ id: r.id, name: r.name, short: r.short, icon: r.icon as Category['icon'], color: r.color_hex, budget: r.budget_amount }));
+}
+
+// Inserts a user-created category. New categories sort after all existing ones.
+export async function insertCategory(db: DB, c: Category): Promise<void> {
+  const now = new Date().toISOString();
+  const row = await db.getFirstAsync<{ n: number }>('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM categories');
+  const sortOrder = row?.n ?? 0;
+  await db.runAsync(
+    `INSERT INTO categories
+       (id, name, short, icon, color_hex, is_system, budget_amount, budget_alert_threshold, sort_order, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 0, NULL, 75, ?, ?, ?)`,
+    c.id, c.name, c.short, c.icon, c.color, sortOrder, now, now,
+  );
 }
 
 // ---------- Preferences (key/value JSON) ----------
