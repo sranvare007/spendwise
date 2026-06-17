@@ -21,7 +21,8 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
 export function AddExpenseModal() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { draft, setDraft, pressKey, delKey, saveExpense, closeModal, categories } = useStore();
+  const { draft, setDraft, pressKey, delKey, saveExpense, closeModal, categories, editingId, deleteExpense } = useStore();
+  const isEditing = editingId !== null;
 
   const slide = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -45,7 +46,7 @@ export function AddExpenseModal() {
           <View style={{ position: 'absolute', left: 0, right: 0, top: 11, alignItems: 'center' }}>
             <View style={{ width: 38, height: 5, borderRadius: 99, backgroundColor: t.line }} />
           </View>
-          <AppText style={{ fontSize: 17, fontWeight: '800', color: t.text }}>Add expense</AppText>
+          <AppText style={{ fontSize: 17, fontWeight: '800', color: t.text }}>{isEditing ? 'Edit expense' : 'Add expense'}</AppText>
           <Press onPress={closeModal} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: t.card2, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="close" size={17} color={t.sub} strokeWidth={2.2} />
           </Press>
@@ -122,8 +123,23 @@ export function AddExpenseModal() {
             disabled={!canSave}
             style={{ height: 54, marginTop: 9, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: canSave ? t.accent : t.card2, ...(canSave ? { shadowColor: t.accent, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5 } : null) }}
           >
-            <AppText style={{ fontSize: 16, fontWeight: '800', color: canSave ? t.onAccent : t.faint }}>{canSave ? 'Add ₹' + fmtAmount(draft.amount) : 'Enter amount & details'}</AppText>
+            <AppText style={{ fontSize: 16, fontWeight: '800', color: canSave ? t.onAccent : t.faint }}>
+              {isEditing
+                ? (canSave ? 'Save changes' : 'Enter amount & details')
+                : (canSave ? 'Add ₹' + fmtAmount(draft.amount) : 'Enter amount & details')}
+            </AppText>
           </Press>
+
+          {/* Delete (edit mode only) */}
+          {isEditing && (
+            <Press
+              onPress={() => { if (editingId) deleteExpense(editingId); closeModal(); }}
+              style={{ height: 50, marginTop: 10, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, backgroundColor: tint('#FF5C5C', t.dark) }}
+            >
+              <Icon name="trash" size={18} color="#FF5C5C" />
+              <AppText style={{ fontSize: 15, fontWeight: '800', color: '#FF5C5C' }}>Delete expense</AppText>
+            </Press>
+          )}
         </ScrollView>
       </Animated.View>
     </View>
