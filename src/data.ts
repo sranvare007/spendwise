@@ -36,6 +36,7 @@ export interface Draft {
 
 export const CATS: Category[] = [
   { id: 'food', name: 'Food & Dining', short: 'Food', color: '#FF7A5C', icon: 'food' },
+  { id: 'groceries', name: 'Groceries', short: 'Grocery', color: '#34B36B', icon: 'cart' },
   { id: 'transport', name: 'Transport', short: 'Transport', color: '#4C9AFF', icon: 'transport' },
   { id: 'shopping', name: 'Shopping', short: 'Shopping', color: '#C77DFF', icon: 'shopping' },
   { id: 'entertainment', name: 'Entertainment', short: 'Fun', color: '#FF5C9D', icon: 'ent' },

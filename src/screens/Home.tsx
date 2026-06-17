@@ -11,7 +11,7 @@ import { monthKey, monthName, startOf, timeFmt, shortDate, pctW, RangeKey } from
 export function Home() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { expenses, categories, filter, setFilter, theme, budget, openThemeSheet } = useStore();
+  const { expenses, categories, filter, setFilter, theme, budget, openThemeSheet, editExpense } = useStore();
 
   const { monthExp, spent } = useMemo(() => {
     const tm = monthKey(new Date().toISOString());
@@ -204,7 +204,7 @@ export function Home() {
                 {g.items.map((e, i) => {
                   const c = catById(e.cat);
                   return (
-                    <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 13, paddingHorizontal: 15, borderBottomWidth: i === g.items.length - 1 ? 0 : 1, borderBottomColor: t.line }}>
+                    <Press key={e.id} onPress={() => editExpense(e.id)} style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 13, paddingHorizontal: 15, borderBottomWidth: i === g.items.length - 1 ? 0 : 1, borderBottomColor: t.line }}>
                       <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: tint(c.color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
                         <Icon name={c.icon} size={21} color={c.color} />
                       </View>
@@ -222,7 +222,7 @@ export function Home() {
                         <AppText style={{ fontSize: 15, fontWeight: '800', color: t.text }}>-₹{inr(e.amount)}</AppText>
                         <AppText style={{ fontSize: 11, color: t.faint, marginTop: 2 }}>{timeFmt(new Date(e.date))}</AppText>
                       </View>
-                    </View>
+                    </Press>
                   );
                 })}
               </View>

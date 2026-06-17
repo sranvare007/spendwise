@@ -35,3 +35,30 @@ export async function seedIfEmpty(db: DB): Promise<void> {
     }
   });
 }
+
+// Inserts any default category (from CATS) that isn't already present.
+// Runs on every launch so new default categories reach existing installs
+// without a destructive reseed. Idempotent — skips ids that already exist and
+// leaves user-created categories untouched.
+export async function ensureDefaultCategories(db: DB): Promise<void> {
+  const rows = await db.getAllAsync<{ id: string }>('SELECT id FROM categories');
+  const existing = new Set(rows.map((r) => r.id));
+  const missing = CATS.filter((c) => !existing.has(c.id));
+  if (missing.length === 0) return;
+
+  const now = new Date().toISOString();
+  const startRow = await db.getFirstAsync<{ n: number }>('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM categories');
+  let sort = startRow?.n ?? 0;
+
+  await db.withTransactionAsync(async () => {
+    for (const c of missing) {
+      const budget = CAT_BUDGETS[c.id] ?? null;
+      await db.runAsync(
+        `INSERT INTO categories
+          (id, name, short, icon, color_hex, is_system, budget_amount, budget_alert_threshold, sort_order, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 1, ?, 75, ?, ?, ?)`,
+        c.id, c.name, c.short, c.icon, c.color, budget, sort++, now, now,
+      );
+    }
+  });
+}
