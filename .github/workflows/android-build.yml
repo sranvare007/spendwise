@@ -82,17 +82,22 @@ jobs:
 
       # Upload the APK to litterbox (free temporary host, no account needed).
       # time=72h is the maximum retention litterbox offers.
+      # Best-effort only: litterbox is an unreliable free service (frequent 5xx),
+      # so this never fails the build — the APK is always available as the
+      # GitHub Actions artifact uploaded above. Transient errors are retried.
       - name: Upload APK to litterbox
         id: litterbox
+        continue-on-error: true
         working-directory: android/app/build/outputs/apk/release
         run: |
           APK=$(ls *.apk | head -n1)
           echo "Uploading $APK to litterbox..."
-          URL=$(curl -fsS \
+          URL=$(curl -sS --fail \
+            --retry 5 --retry-all-errors --retry-delay 10 --max-time 300 \
             -F "reqtype=fileupload" \
             -F "time=72h" \
             -F "fileToUpload=@${APK}" \
-            https://litterbox.catbox.moe/resources/internals/api.php)
+            https://litterbox.catbox.moe/resources/internals/api.php) || URL=""
           case "$URL" in
             https://*)
               echo "Litterbox URL: $URL"
@@ -100,8 +105,8 @@ jobs:
               echo "📦 **APK (expires in 72h):** $URL" >> "$GITHUB_STEP_SUMMARY"
               ;;
             *)
-              echo "Litterbox upload failed: $URL"
-              exit 1
+              echo "::warning::Litterbox upload failed/unavailable — download the APK from this run's Artifacts."
+              echo "📦 Litterbox unavailable — download the APK from this run's **Artifacts**." >> "$GITHUB_STEP_SUMMARY"
               ;;
           esac
 
@@ -117,8 +122,14 @@ jobs:
           COMMIT: ${{ github.sha }}
           BRANCH: ${{ github.ref_name }}
         run: |
-          MSG=$(printf '✅ SpendWise Android build ready\n\nBranch: %s\nCommit: %s\n\n📦 %s\n\n(link expires in 72h)' \
-            "$BRANCH" "${COMMIT:0:7}" "$LITTERBOX_URL")
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [ -n "$LITTERBOX_URL" ]; then
+            LINK=$(printf '📦 %s\n\n(link expires in 72h)' "$LITTERBOX_URL")
+          else
+            LINK=$(printf '📦 APK in the run Artifacts (login required):\n%s' "$RUN_URL")
+          fi
+          MSG=$(printf '✅ SpendWise Android build ready\n\nBranch: %s\nCommit: %s\n\n%s' \
+            "$BRANCH" "${COMMIT:0:7}" "$LINK")
           HTTP=$(curl -sS -o /tmp/tg.json -w '%{http_code}' \
             -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
