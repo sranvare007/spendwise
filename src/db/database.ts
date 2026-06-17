@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { SCHEMA_VERSION, MIGRATIONS } from './schema';
-import { seedIfEmpty } from './seed';
+import { seedIfEmpty, ensureDefaultCategories } from './seed';
 
 export type DB = SQLite.SQLiteDatabase;
 
@@ -32,5 +32,6 @@ async function init(): Promise<DB> {
   }
 
   await seedIfEmpty(db);
+  await ensureDefaultCategories(db);
   return db;
 }
