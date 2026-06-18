@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, TextInput, ScrollView, Animated, Pressable, Dimensions } from 'react-native';
 import { AppText } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +6,7 @@ import { useTheme, inr, tint } from '../theme';
 import { Icon } from '../icons';
 import { Press } from './Press';
 import { useStore } from '../store';
+import { monthName, shortDate } from '../utils';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -17,6 +18,20 @@ function fmtAmount(str: string): string {
 }
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
+const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
+const sameDay = (a: Date, b: Date) => startOfDay(a) === startOfDay(b);
+
+// Calendar cells for a month, leading-padded so day 1 lands on its weekday.
+function monthCells(view: Date): (Date | null)[] {
+  const y = view.getFullYear(), m = view.getMonth();
+  const pad = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const cells: (Date | null)[] = Array(pad).fill(null);
+  for (let d = 1; d <= days; d++) cells.push(new Date(y, m, d));
+  return cells;
+}
 
 export function AddExpenseModal() {
   const t = useTheme();
@@ -32,6 +47,25 @@ export function AddExpenseModal() {
   const translateY = slide.interpolate({ inputRange: [0, 1], outputRange: [SCREEN_H, 0] });
   const amt = Number(draft.amount);
   const canSave = amt > 0 && !!draft.desc.trim() && !!draft.cat;
+
+  // ---- date picker ----
+  const today = new Date();
+  const selDate = new Date(draft.date);
+  const [showCal, setShowCal] = useState(false);
+  const [viewMonth, setViewMonth] = useState(() => new Date(selDate.getFullYear(), selDate.getMonth(), 1));
+  const dateLabel = sameDay(selDate, today) ? 'Today' : shortDate(selDate);
+
+  // Apply the chosen day while keeping the existing time-of-day; future days are blocked.
+  const pickDay = (day: Date) => {
+    if (startOfDay(day) > startOfDay(today)) return;
+    const next = new Date(day);
+    next.setHours(selDate.getHours(), selDate.getMinutes(), selDate.getSeconds(), selDate.getMilliseconds());
+    setDraft({ date: next.toISOString() });
+    setShowCal(false);
+  };
+  const shiftMonth = (delta: number) => setViewMonth((m) => new Date(m.getFullYear(), m.getMonth() + delta, 1));
+  // Don't let the user page into months that are entirely in the future.
+  const atCurrentMonth = viewMonth.getFullYear() === today.getFullYear() && viewMonth.getMonth() === today.getMonth();
 
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}>
@@ -73,11 +107,53 @@ export function AddExpenseModal() {
                 );
               })}
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 13, borderRadius: 12, backgroundColor: t.card2 }}>
-              <Icon name="cal" size={15} color={t.sub} />
-              <AppText style={{ fontSize: 13, fontWeight: '700', color: t.sub }}>Today</AppText>
-            </View>
+            <Press onPress={() => setShowCal((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 13, borderRadius: 12, backgroundColor: showCal ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: showCal ? t.accent : 'transparent' }}>
+              <Icon name="cal" size={15} color={showCal ? t.accent : t.sub} />
+              <AppText style={{ fontSize: 13, fontWeight: '700', color: showCal ? t.accent : t.sub }}>{dateLabel}</AppText>
+            </Press>
           </View>
+
+          {/* Calendar */}
+          {showCal && (
+            <View style={{ borderRadius: 16, backgroundColor: t.card2, padding: 12, marginBottom: 18 }}>
+              {/* Month nav */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <Press onPress={() => shiftMonth(-1)} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="chevL" size={16} color={t.sub} strokeWidth={2.2} />
+                </Press>
+                <AppText style={{ fontSize: 14, fontWeight: '800', color: t.text }}>{monthName(viewMonth)} {viewMonth.getFullYear()}</AppText>
+                <Press onPress={() => !atCurrentMonth && shiftMonth(1)} disabled={atCurrentMonth} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center', opacity: atCurrentMonth ? 0.35 : 1 }}>
+                  <Icon name="chevR" size={16} color={t.sub} strokeWidth={2.2} />
+                </Press>
+              </View>
+
+              {/* Weekday header */}
+              <View style={{ flexDirection: 'row', marginBottom: 4 }}>
+                {WEEKDAY_LETTERS.map((w, i) => (
+                  <View key={i} style={{ width: '14.285%', alignItems: 'center' }}>
+                    <AppText style={{ fontSize: 11, fontWeight: '700', color: t.faint }}>{w}</AppText>
+                  </View>
+                ))}
+              </View>
+
+              {/* Day grid */}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                {monthCells(viewMonth).map((day, i) => {
+                  if (!day) return <View key={i} style={{ width: '14.285%', height: 38 }} />;
+                  const selected = sameDay(day, selDate);
+                  const isToday = sameDay(day, today);
+                  const future = startOfDay(day) > startOfDay(today);
+                  return (
+                    <View key={i} style={{ width: '14.285%', height: 38, alignItems: 'center', justifyContent: 'center' }}>
+                      <Press onPress={() => pickDay(day)} disabled={future} style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: selected ? t.accent : 'transparent' }}>
+                        <AppText style={{ fontSize: 13.5, fontWeight: selected || isToday ? '800' : '600', color: future ? t.faint : selected ? t.onAccent : isToday ? t.accent : t.text }}>{day.getDate()}</AppText>
+                      </Press>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           {/* Description */}
           <TextInput

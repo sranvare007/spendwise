@@ -32,6 +32,7 @@ export interface Draft {
   desc: string;
   cat: string | null;
   wn: 'NEED' | 'WANT';
+  date: string; // ISO string of the expense date
 }
 
 export const CATS: Category[] = [

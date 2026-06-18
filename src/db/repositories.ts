@@ -64,15 +64,15 @@ export async function insertExpense(db: DB, e: NewExpense): Promise<void> {
   );
 }
 
-// Updates an existing expense's editable fields. The original date and id are
-// preserved; only amount, description, category and classification change.
+// Updates an existing expense's editable fields. The id is preserved; amount,
+// description, category, classification and date all change.
 export async function updateExpense(db: DB, e: NewExpense): Promise<void> {
   const now = new Date().toISOString();
   await db.runAsync(
     `UPDATE expenses
-        SET amount = ?, description = ?, category_id = ?, classification = ?, updated_at = ?
+        SET amount = ?, description = ?, category_id = ?, classification = ?, date = ?, updated_at = ?
       WHERE id = ?`,
-    e.amount, e.desc, e.cat, e.wn, now, e.id,
+    e.amount, e.desc, e.cat, e.wn, e.date, now, e.id,
   );
 }
 
