@@ -8,7 +8,7 @@ import { IconName } from './icons';
 import { getDatabase } from './db/database';
 import {
   getExpenses, insertExpense, updateExpense, softDeleteExpense, clearAllExpenses, getRecurring, setRecurringPaused,
-  getAllPrefs, setPref, getCategories, insertCategory,
+  insertRecurring, getAllPrefs, setPref, getCategories, insertCategory,
 } from './db/repositories';
 
 // Re-export shared data so existing screen imports keep working.
@@ -16,6 +16,7 @@ export { CATS, CAT_BUDGETS, CATEGORY_COLORS, catById, DEFAULT_BUDGET } from './d
 export type { Category, Expense, Recurring, Draft } from './data';
 
 export interface NewCategoryInput { name: string; icon: IconName; color: string; }
+export interface NewRecurringInput { name: string; cat: string; amount: number; freq: string; due: number; }
 
 export interface Settings {
   budgetAlerts: boolean;
@@ -68,6 +69,7 @@ interface StoreValue {
   deleteExpense: (id: string) => void;
   clearExpenses: () => void;
   addCategory: (input: NewCategoryInput) => void;
+  addRecurring: (input: NewRecurringInput) => void;
   toggleSetting: (key: keyof Settings) => void;
   setBiometric: (enabled: boolean) => void;
   requestUnlock: () => Promise<AuthOutcome>;
@@ -330,6 +332,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const addRecurring = useCallback((input: NewRecurringInput) => {
+    const name = input.name.trim();
+    if (!name || !input.cat || !(input.amount > 0)) return;
+    const r: Recurring = {
+      id: 'r' + Date.now(), name, cat: input.cat, amount: input.amount,
+      freq: input.freq, due: Math.max(0, Math.round(input.due) || 0), paused: false,
+    };
+    setRecurring((arr) => [...arr, r]);
+    writeDb((db) => insertRecurring(db, r));
+    showToast('Recurring "' + name + '" added.', 'good');
+  }, [showToast]);
+
   const toggleInsight = useCallback((id: string) => {
     setSavedInsights((s) => { const next = { ...s, [id]: !s[id] }; writeDb((db) => setPref(db, 'savedInsights', next)); return next; });
   }, []);
@@ -353,7 +367,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     analyticsPeriod, donutCat, settings, savedInsights, recurring, toast, confettiKey, locked,
     setFilter,
     beginNewExpense, beginEditExpense, resetExpenseEntry,
-    setTheme, setDraft, pressKey, delKey, saveExpense, deleteExpense, clearExpenses, addCategory, toggleSetting,
+    setTheme, setDraft, pressKey, delKey, saveExpense, deleteExpense, clearExpenses, addCategory, addRecurring, toggleSetting,
     setBiometric, requestUnlock, changeBudget,
     toggleRecur, toggleInsight, setAnalyticsPeriod, setDonutCat, exportCsv,
   };

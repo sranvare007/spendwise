@@ -102,24 +102,33 @@ export function SubScreen() {
         {sub === 'recurring' && (
           <>
             <AppText style={{ fontSize: 13, color: t.sub, marginBottom: 14, lineHeight: 19.5 }}>Bills and subscriptions that add themselves automatically on their due date.</AppText>
-            <View style={{ gap: 12 }}>
-              {recurring.map((r) => {
-                const c = catById(r.cat);
-                return (
-                  <View key={r.id} style={{ borderRadius: 16, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 15, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 13, opacity: r.paused ? 0.5 : 1 }}>
-                    <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: tint(c.color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon name={c.icon} size={21} color={c.color} />
+            {recurring.length === 0 ? (
+              <View style={{ borderRadius: 16, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 26, paddingHorizontal: 16, alignItems: 'center' }}>
+                <Icon name="repeat" size={26} color={t.faint} />
+                <AppText style={{ fontSize: 13.5, fontWeight: '700', color: t.sub, marginTop: 10 }}>No recurring expenses yet</AppText>
+                <AppText style={{ fontSize: 12.5, color: t.faint, marginTop: 4, textAlign: 'center' }}>Add one below to start tracking your bills.</AppText>
+              </View>
+            ) : (
+              <View style={{ gap: 12 }}>
+                {recurring.map((r) => {
+                  const c = catById(r.cat);
+                  return (
+                    <View key={r.id} style={{ borderRadius: 16, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 15, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 13, opacity: r.paused ? 0.5 : 1 }}>
+                      <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: tint(c.color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon name={c.icon} size={21} color={c.color} />
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <AppText style={{ fontSize: 14.5, fontWeight: '800', color: t.text }}>{r.name}</AppText>
+                        <AppText style={{ fontSize: 12, color: t.faint, marginTop: 2 }}>{r.freq} · Due in {r.due} {r.due === 1 ? 'day' : 'days'}</AppText>
+                      </View>
+                      <AppText style={{ fontSize: 15, fontWeight: '800', color: t.text, marginRight: 4 }}>₹{inr(r.amount)}</AppText>
+                      <Toggle on={!r.paused} onToggle={() => toggleRecur(r.id)} />
                     </View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <AppText style={{ fontSize: 14.5, fontWeight: '800', color: t.text }}>{r.name}</AppText>
-                      <AppText style={{ fontSize: 12, color: t.faint, marginTop: 2 }}>{r.freq} · Due in {r.due} {r.due === 1 ? 'day' : 'days'}</AppText>
-                    </View>
-                    <AppText style={{ fontSize: 15, fontWeight: '800', color: t.text, marginRight: 4 }}>₹{inr(r.amount)}</AppText>
-                    <Toggle on={!r.paused} onToggle={() => toggleRecur(r.id)} />
-                  </View>
-                );
-              })}
-            </View>
+                  );
+                })}
+              </View>
+            )}
+            <RecurringManager />
           </>
         )}
 
@@ -240,6 +249,90 @@ function CategoriesManager() {
         >
           <Icon name="plus" size={19} color={canSave ? t.onAccent : t.faint} strokeWidth={2.4} />
           <AppText style={{ fontSize: 15.5, fontWeight: '800', color: canSave ? t.onAccent : t.faint }}>{canSave ? 'Add category' : 'Name & pick an icon'}</AppText>
+        </Press>
+      </View>
+    </>
+  );
+}
+
+const FREQ_OPTIONS = ['Weekly', 'Monthly', 'Yearly'];
+
+// Inline form to create a recurring expense (bill/subscription).
+function RecurringManager() {
+  const t = useTheme();
+  const { categories, addRecurring } = useStore();
+
+  const [name, setName] = useState('');
+  const [amount, setAmount] = useState('');
+  const [cat, setCat] = useState<string | null>(null);
+  const [freq, setFreq] = useState('Monthly');
+  const [due, setDue] = useState('30');
+
+  const amt = Number(amount);
+  const canSave = name.trim().length > 0 && cat !== null && amt > 0;
+
+  const onSave = () => {
+    if (!canSave || cat === null) return;
+    addRecurring({ name, cat, amount: amt, freq, due: Number(due) || 0 });
+    setName(''); setAmount(''); setCat(null); setFreq('Monthly'); setDue('30');
+  };
+
+  const inputStyle = { height: 48, paddingHorizontal: 14, borderRadius: 13, borderWidth: 1, borderColor: t.line, backgroundColor: t.card2, fontSize: 15, color: t.text, fontFamily: 'Montserrat_600SemiBold' } as const;
+  const labelStyle = { fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.5, marginLeft: 2, marginBottom: 9 } as const;
+
+  return (
+    <>
+      <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Add recurring</AppText>
+      <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 16 }}>
+        {/* Name */}
+        <TextInput value={name} onChangeText={setName} placeholder="Name (e.g. Netflix)" placeholderTextColor={t.faint} maxLength={32} style={{ ...inputStyle, marginBottom: 12 }} />
+
+        {/* Amount + due */}
+        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <AppText style={labelStyle}>Amount (₹)</AppText>
+            <TextInput value={amount} onChangeText={(v) => setAmount(v.replace(/[^0-9.]/g, ''))} placeholder="0" placeholderTextColor={t.faint} keyboardType="decimal-pad" style={inputStyle} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <AppText style={labelStyle}>Due in (days)</AppText>
+            <TextInput value={due} onChangeText={(v) => setDue(v.replace(/[^0-9]/g, ''))} placeholder="30" placeholderTextColor={t.faint} keyboardType="number-pad" maxLength={4} style={inputStyle} />
+          </View>
+        </View>
+
+        {/* Frequency */}
+        <AppText style={labelStyle}>Frequency</AppText>
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+          {FREQ_OPTIONS.map((f) => {
+            const active = freq === f;
+            return (
+              <Press key={f} onPress={() => setFreq(f)} style={{ flex: 1, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: active ? t.accent : 'transparent' }}>
+                <AppText style={{ fontSize: 13, fontWeight: '700', color: active ? t.accent : t.sub }}>{f}</AppText>
+              </Press>
+            );
+          })}
+        </View>
+
+        {/* Category */}
+        <AppText style={labelStyle}>Category</AppText>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+          {categories.map((c) => {
+            const active = cat === c.id;
+            return (
+              <Press key={c.id} onPress={() => setCat(c.id)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 11, borderRadius: 12, backgroundColor: active ? tint(c.color, t.dark) : t.card2, borderWidth: 1.5, borderColor: active ? c.color : 'transparent' }}>
+                <Icon name={c.icon} size={16} color={active ? c.color : t.sub} />
+                <AppText style={{ fontSize: 12.5, fontWeight: '700', color: active ? c.color : t.sub }}>{c.short}</AppText>
+              </Press>
+            );
+          })}
+        </View>
+
+        <Press
+          onPress={onSave}
+          disabled={!canSave}
+          style={{ height: 52, borderRadius: 15, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, backgroundColor: canSave ? t.accent : t.card2, ...(canSave ? { shadowColor: t.accent, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 4 } : null) }}
+        >
+          <Icon name="plus" size={19} color={canSave ? t.onAccent : t.faint} strokeWidth={2.4} />
+          <AppText style={{ fontSize: 15.5, fontWeight: '800', color: canSave ? t.onAccent : t.faint }}>{canSave ? 'Add recurring' : 'Name, amount & category'}</AppText>
         </Press>
       </View>
     </>

@@ -106,6 +106,19 @@ export async function setRecurringPaused(db: DB, id: string, paused: boolean): P
   await db.runAsync('UPDATE recurring_expenses SET is_paused = ?, updated_at = ? WHERE id = ?', paused ? 1 : 0, now, id);
 }
 
+// Inserts a user-created recurring expense. New entries sort after all existing ones.
+export async function insertRecurring(db: DB, r: Recurring): Promise<void> {
+  const now = new Date().toISOString();
+  const row = await db.getFirstAsync<{ n: number }>('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM recurring_expenses');
+  const sortOrder = row?.n ?? 0;
+  await db.runAsync(
+    `INSERT INTO recurring_expenses
+       (id, name, category_id, amount, frequency, due_in_days, is_paused, sort_order, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    r.id, r.name, r.cat, r.amount, r.freq, r.due, r.paused ? 1 : 0, sortOrder, now, now,
+  );
+}
+
 // ---------- Categories ----------
 export async function getCategories(db: DB): Promise<(Category & { budget: number | null })[]> {
   const rows = await db.getAllAsync<CategoryRow>(
