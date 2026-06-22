@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, tint, inr, ThemeKey, THEME_META } from '../theme';
 import { Icon, IconName } from '../icons';
 import { Press } from '../components/Press';
 import { Toggle } from '../components/Toggle';
-import { useStore, Settings as SettingsType, Sub } from '../store';
+import { useStore, Settings as SettingsType } from '../store';
+import { RootStackParamList } from '../navigation';
 import { getBiometricCapability, BioCapability } from '../biometric';
+
+type SubRoute = 'Budgets' | 'Recurring' | 'Categories' | 'Export';
 
 export function Settings() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, setSub, expenses, categories, clearExpenses } = useStore();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, expenses, categories, clearExpenses } = useStore();
 
   const confirmClear = () => {
     if (expenses.length === 0) { clearExpenses(); return; }
@@ -43,11 +49,11 @@ export function Settings() {
       ? (bioCap.reason ?? 'Unavailable on this device')
       : `Require ${bioLabel} to open the app`;
 
-  const manageRows: { icon: IconName; color: string; label: string; detail: string; sub: Sub }[] = [
-    { icon: 'target', color: '#07CB73', label: 'Budgets', detail: '₹' + inr(budget), sub: 'budgets' },
-    { icon: 'repeat', color: '#5B8DEF', label: 'Recurring expenses', detail: recurring.filter((r) => !r.paused).length + ' active', sub: 'recurring' },
-    { icon: 'tag', color: '#C77DFF', label: 'Categories', detail: String(categories.length), sub: 'categories' },
-    { icon: 'download', color: '#FFB23E', label: 'Export data', detail: 'CSV', sub: 'export' },
+  const manageRows: { icon: IconName; color: string; label: string; detail: string; route: SubRoute }[] = [
+    { icon: 'target', color: '#07CB73', label: 'Budgets', detail: '₹' + inr(budget), route: 'Budgets' },
+    { icon: 'repeat', color: '#5B8DEF', label: 'Recurring expenses', detail: recurring.filter((r) => !r.paused).length + ' active', route: 'Recurring' },
+    { icon: 'tag', color: '#C77DFF', label: 'Categories', detail: String(categories.length), route: 'Categories' },
+    { icon: 'download', color: '#FFB23E', label: 'Export data', detail: 'CSV', route: 'Export' },
   ];
 
   const toggleRows: { icon: IconName; color: string; label: string; key: keyof SettingsType }[] = [
@@ -103,7 +109,7 @@ export function Settings() {
         <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Budget & data</AppText>
         <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden' }}>
           {manageRows.map((m, i) => (
-            <Press key={m.label + i} onPress={() => setSub(m.sub)} style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: i === manageRows.length - 1 ? 0 : 1, borderBottomColor: t.line }}>
+            <Press key={m.label + i} onPress={() => navigation.navigate(m.route)} style={{ flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: i === manageRows.length - 1 ? 0 : 1, borderBottomColor: t.line }}>
               <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: tint(m.color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name={m.icon} size={18} color={m.color} />
               </View>

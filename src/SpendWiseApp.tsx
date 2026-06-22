@@ -1,22 +1,16 @@
 import React from 'react';
 import { View, StatusBar, ActivityIndicator } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import { ThemeContext, THEMES } from './theme';
 import { StoreProvider, useStore } from './store';
-import { Home } from './screens/Home';
-import { Analytics } from './screens/Analytics';
-import { Insights } from './screens/Insights';
-import { Settings } from './screens/Settings';
-import { SubScreen } from './screens/SubScreen';
-import { BottomBar } from './components/BottomBar';
-import { AddExpenseModal } from './components/AddExpenseModal';
-import { ThemeSheet } from './components/ThemeSheet';
+import { RootNavigator, useNavTheme } from './navigation';
 import { Toast } from './components/Toast';
 import { Confetti } from './components/Confetti';
-import { LockScreen } from './components/LockScreen';
 
 function Root() {
-  const { ready, theme, tab, sub, modalOpen, themeSheetOpen, locked } = useStore();
+  const { ready, theme } = useStore();
   const t = THEMES[theme];
+  const navTheme = useNavTheme();
 
   return (
     <ThemeContext.Provider value={t}>
@@ -27,21 +21,13 @@ function Root() {
             <ActivityIndicator color={t.accent} />
           </View>
         ) : (
-          <>
-            {tab === 'home' && <Home />}
-            {tab === 'analytics' && <Analytics />}
-            {tab === 'insights' && <Insights />}
-            {tab === 'settings' && <Settings />}
-
-            {sub && <SubScreen />}
-            <BottomBar />
-            {modalOpen && <AddExpenseModal />}
-            {themeSheetOpen && <ThemeSheet />}
-            <Toast />
-            <Confetti />
-          </>
+          <NavigationContainer theme={navTheme}>
+            <RootNavigator />
+          </NavigationContainer>
         )}
-        {locked && <LockScreen />}
+        {/* Global overlays — not part of navigation, float above every screen. */}
+        <Toast />
+        <Confetti />
       </View>
     </ThemeContext.Provider>
   );

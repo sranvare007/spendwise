@@ -24,8 +24,6 @@ export interface Settings {
   biometric: boolean;
 }
 
-export type Tab = 'home' | 'analytics' | 'insights' | 'settings';
-export type Sub = 'budgets' | 'recurring' | 'export' | 'categories' | null;
 export type RangeKey = 'today' | 'week' | 'month' | 'all';
 export type Period = 'week' | 'month' | '6m';
 export interface Filter { range: RangeKey; cat: string; wn: 'all' | 'NEED' | 'WANT'; q: string; }
@@ -46,10 +44,6 @@ interface StoreValue {
   expenses: Expense[];
   categories: Category[];
   filter: Filter;
-  tab: Tab;
-  sub: Sub;
-  modalOpen: boolean;
-  themeSheetOpen: boolean;
   theme: ThemeKey;
   budget: number;
   draft: Draft;
@@ -63,18 +57,14 @@ interface StoreValue {
   confettiKey: number;
   locked: boolean;
   setFilter: (patch: Partial<Filter>) => void;
-  setTab: (t: Tab) => void;
-  setSub: (s: Sub) => void;
-  openModal: () => void;
-  editExpense: (id: string) => void;
-  closeModal: () => void;
-  openThemeSheet: () => void;
-  closeThemeSheet: () => void;
+  beginNewExpense: () => void;
+  beginEditExpense: (id: string) => void;
+  resetExpenseEntry: () => void;
   setTheme: (k: ThemeKey) => void;
   setDraft: (patch: Partial<Draft>) => void;
   pressKey: (d: string) => void;
   delKey: () => void;
-  saveExpense: () => void;
+  saveExpense: () => boolean;
   deleteExpense: (id: string) => void;
   clearExpenses: () => void;
   addCategory: (input: NewCategoryInput) => void;
@@ -101,10 +91,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>(CATS);
   const [filter, setFilterState] = useState<Filter>(DEFAULT_FILTER);
-  const [tab, setTabState] = useState<Tab>('home');
-  const [sub, setSubState] = useState<Sub>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [themeSheetOpen, setThemeSheetOpen] = useState(false);
   const [theme, setThemeState] = useState<ThemeKey>('mint');
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
   const [draft, setDraftState] = useState<Draft>(freshDraft());
@@ -169,7 +155,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setTheme = useCallback((k: ThemeKey) => {
-    setThemeState(k); setThemeSheetOpen(false); writeDb((db) => setPref(db, 'theme', k));
+    setThemeState(k); writeDb((db) => setPref(db, 'theme', k));
   }, []);
 
   const setDraft = useCallback((patch: Partial<Draft>) => {
@@ -197,22 +183,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setDraftState((s) => ({ ...s, amount: s.amount.slice(0, -1) }));
   }, []);
 
-  const saveExpense = useCallback(() => {
+  // Returns true when the entry was committed (or the edit target vanished) so the
+  // caller can dismiss the modal; returns false on validation failure so it stays open.
+  const saveExpense = useCallback((): boolean => {
     const amt = Number(draft.amount);
-    if (!amt || amt <= 0 || !draft.desc.trim() || !draft.cat) return;
+    if (!amt || amt <= 0 || !draft.desc.trim() || !draft.cat) return false;
 
     // Edit path: keep id and original date, update the rest in place.
     if (editingId) {
       const orig = expenses.find((e) => e.id === editingId);
-      if (!orig) { setModalOpen(false); setEditingId(null); setDraftState(freshDraft()); return; }
+      if (!orig) return true;
       const updated: Expense = { ...orig, amount: amt, desc: draft.desc.trim(), cat: draft.cat, wn: draft.wn, date: draft.date };
       setExpenses((arr) => arr.map((e) => (e.id === editingId ? updated : e)));
-      setModalOpen(false);
-      setEditingId(null);
-      setDraftState(freshDraft());
       writeDb((db) => updateExpense(db, { ...updated, currency: 'INR' }));
       showToast('Expense updated.', 'good');
-      return;
+      return true;
     }
 
     const exp: Expense = {
@@ -220,8 +205,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
     const next = [exp, ...expenses];
     setExpenses(next);
-    setModalOpen(false);
-    setDraftState(freshDraft());
     writeDb((db) => insertExpense(db, { ...exp, currency: 'INR' }));
 
     const tm = monthKey(new Date().toISOString());
@@ -235,15 +218,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     } else {
       showToast('Logged. You are over your monthly budget.', 'bad');
     }
+    return true;
   }, [draft, expenses, budget, showToast, editingId]);
 
-  const editExpense = useCallback((id: string) => {
+  // Prime the draft for a brand-new entry; the caller then navigates to the modal.
+  const beginNewExpense = useCallback(() => {
+    setDraftState(freshDraft());
+    setEditingId(null);
+  }, []);
+
+  // Prime the draft from an existing expense for editing; the caller then navigates.
+  const beginEditExpense = useCallback((id: string) => {
     const e = expenses.find((x) => x.id === id);
     if (!e) return;
     setDraftState({ amount: String(e.amount), desc: e.desc, cat: e.cat, wn: e.wn, date: e.date });
     setEditingId(id);
-    setModalOpen(true);
   }, [expenses]);
+
+  // Clear draft + edit target when the modal screen unmounts.
+  const resetExpenseEntry = useCallback(() => {
+    setEditingId(null);
+    setDraftState(freshDraft());
+  }, []);
 
   const deleteExpense = useCallback((id: string) => {
     setExpenses((arr) => arr.filter((e) => e.id !== id));
@@ -353,16 +349,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [expenses, showToast]);
 
   const value: StoreValue = {
-    ready, expenses, categories, filter, tab, sub, modalOpen, themeSheetOpen, theme, budget, draft, editingId,
+    ready, expenses, categories, filter, theme, budget, draft, editingId,
     analyticsPeriod, donutCat, settings, savedInsights, recurring, toast, confettiKey, locked,
     setFilter,
-    setTab: (t) => { setTabState(t); setSubState(null); },
-    setSub: setSubState,
-    openModal: () => { setDraftState(freshDraft()); setEditingId(null); setModalOpen(true); },
-    editExpense,
-    closeModal: () => { setModalOpen(false); setEditingId(null); setDraftState(freshDraft()); },
-    openThemeSheet: () => setThemeSheetOpen(true),
-    closeThemeSheet: () => setThemeSheetOpen(false),
+    beginNewExpense, beginEditExpense, resetExpenseEntry,
     setTheme, setDraft, pressKey, delKey, saveExpense, deleteExpense, clearExpenses, addCategory, toggleSetting,
     setBiometric, requestUnlock, changeBudget,
     toggleRecur, toggleInsight, setAnalyticsPeriod, setDonutCat, exportCsv,

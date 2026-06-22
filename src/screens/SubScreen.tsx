@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, ScrollView, Animated, TextInput } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, ScrollView, TextInput } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, tint } from '../theme';
@@ -7,18 +8,17 @@ import { Icon, IconName, CATEGORY_ICONS } from '../icons';
 import { Press } from '../components/Press';
 import { Toggle } from '../components/Toggle';
 import { useStore, CAT_BUDGETS, CATEGORY_COLORS, catById } from '../store';
+import { SUB_KIND_BY_ROUTE, SubRouteName } from '../navigation';
 import { monthKey, numericDate, pctW } from '../utils';
 
 export function SubScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { sub, setSub, expenses, budget, changeBudget, recurring, toggleRecur, exportCsv } = useStore();
-
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    anim.setValue(0);
-    Animated.timing(anim, { toValue: 1, duration: 280, useNativeDriver: true }).start();
-  }, [sub, anim]);
+  const navigation = useNavigation();
+  // All four sub-screens share this component; the route name selects the variant.
+  const route = useRoute();
+  const sub = SUB_KIND_BY_ROUTE[route.name as SubRouteName];
+  const { expenses, budget, changeBudget, recurring, toggleRecur, exportCsv } = useStore();
 
   const { spent, left, monthExp } = useMemo(() => {
     const tm = monthKey(new Date().toISOString());
@@ -49,12 +49,10 @@ export function SubScreen() {
     return head + '\n' + rows.join('\n') + more;
   }, [expenses]);
 
-  const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [28, 0] });
-
   return (
-    <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 36, backgroundColor: t.bg, opacity: anim, transform: [{ translateX }] }}>
+    <View style={{ flex: 1, backgroundColor: t.bg }}>
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Press onPress={() => setSub(null)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, alignItems: 'center', justifyContent: 'center' }}>
+        <Press onPress={() => navigation.goBack()} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="chevL" size={18} color={t.text} strokeWidth={2.2} />
         </Press>
         <AppText style={{ fontSize: 21, fontWeight: '800', color: t.text }}>{title}</AppText>
@@ -152,7 +150,7 @@ export function SubScreen() {
 
         {sub === 'categories' && <CategoriesManager />}
       </ScrollView>
-    </Animated.View>
+    </View>
   );
 }
 

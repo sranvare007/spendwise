@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, TextInput, ScrollView, Animated, Pressable, Dimensions } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { AppText } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, tint } from '../theme';
@@ -36,8 +37,16 @@ function monthCells(view: Date): (Date | null)[] {
 export function AddExpenseModal() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { draft, setDraft, pressKey, delKey, saveExpense, closeModal, categories, editingId, deleteExpense } = useStore();
+  const navigation = useNavigation();
+  const { draft, setDraft, pressKey, delKey, saveExpense, resetExpenseEntry, categories, editingId, deleteExpense } = useStore();
   const isEditing = editingId !== null;
+
+  const closeModal = () => navigation.goBack();
+  const onSave = () => { if (saveExpense()) navigation.goBack(); };
+  const onDelete = () => { if (editingId) deleteExpense(editingId); navigation.goBack(); };
+
+  // Clear the draft + edit target when the modal leaves the stack.
+  useEffect(() => resetExpenseEntry, [resetExpenseEntry]);
 
   const slide = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -195,7 +204,7 @@ export function AddExpenseModal() {
 
           {/* Save */}
           <Press
-            onPress={saveExpense}
+            onPress={onSave}
             disabled={!canSave}
             style={{ height: 54, marginTop: 9, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: canSave ? t.accent : t.card2, ...(canSave ? { shadowColor: t.accent, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5 } : null) }}
           >
@@ -209,7 +218,7 @@ export function AddExpenseModal() {
           {/* Delete (edit mode only) */}
           {isEditing && (
             <Press
-              onPress={() => { if (editingId) deleteExpense(editingId); closeModal(); }}
+              onPress={onDelete}
               style={{ height: 50, marginTop: 10, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, backgroundColor: tint('#FF5C5C', t.dark) }}
             >
               <Icon name="trash" size={18} color="#FF5C5C" />

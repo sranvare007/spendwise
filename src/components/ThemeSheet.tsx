@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Animated, Pressable, Dimensions } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { AppText } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, ThemeKey, THEME_META } from '../theme';
@@ -13,7 +14,11 @@ const KEYS: ThemeKey[] = ['mint', 'midnight', 'sunburst'];
 export function ThemeSheet() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { theme, setTheme, closeThemeSheet } = useStore();
+  const navigation = useNavigation();
+  const { theme, setTheme } = useStore();
+
+  const closeThemeSheet = () => navigation.goBack();
+  const pickTheme = (k: ThemeKey) => { setTheme(k); navigation.goBack(); };
 
   const slide = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -35,7 +40,7 @@ export function ThemeSheet() {
             const m = THEME_META[k];
             const active = theme === k;
             return (
-              <Press key={k} onPress={() => setTheme(k)} style={{ flex: 1, padding: 8, borderRadius: 15, backgroundColor: active ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: active ? t.accent : 'transparent' }}>
+              <Press key={k} onPress={() => pickTheme(k)} style={{ flex: 1, padding: 8, borderRadius: 15, backgroundColor: active ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: active ? t.accent : 'transparent' }}>
                 <View style={{ height: 60, borderRadius: 13, backgroundColor: m.swatchBg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 9 }}>
                   <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: m.dotA }} />
                   <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: m.dotB }} />

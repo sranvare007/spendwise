@@ -1,17 +1,24 @@
 import React, { useMemo } from 'react';
 import { View, ScrollView, TextInput } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, hexA, tint } from '../theme';
 import { Icon, IconName } from '../icons';
 import { Press } from '../components/Press';
 import { useStore, catById } from '../store';
+import { RootStackParamList } from '../navigation';
 import { monthKey, monthName, startOf, timeFmt, shortDate, pctW, RangeKey } from '../utils';
 
 export function Home() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { expenses, categories, filter, setFilter, theme, budget, openThemeSheet, editExpense } = useStore();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { expenses, categories, filter, setFilter, theme, budget, beginEditExpense } = useStore();
+
+  const openThemeSheet = () => navigation.navigate('ThemeSheet');
+  const editExpense = (id: string) => { beginEditExpense(id); navigation.navigate('AddExpense'); };
 
   const { monthExp, spent } = useMemo(() => {
     const tm = monthKey(new Date().toISOString());
