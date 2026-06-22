@@ -9,13 +9,14 @@ import { Icon, IconName } from '../icons';
 import { Press } from '../components/Press';
 import { useStore, catById } from '../store';
 import { RootStackParamList } from '../navigation';
-import { monthKey, monthName, startOf, timeFmt, shortDate, pctW, RangeKey } from '../utils';
+import { initials, monthKey, monthName, startOf, timeFmt, shortDate, pctW, RangeKey } from '../utils';
 
 export function Home() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { expenses, categories, filter, setFilter, theme, budget, beginEditExpense } = useStore();
+  const { expenses, categories, filter, setFilter, theme, budget, beginEditExpense, profileName } = useStore();
+  const displayName = profileName.trim() || 'there';
 
   const openThemeSheet = () => navigation.navigate('ThemeSheet');
   const editExpense = (id: string) => { beginEditExpense(id); navigation.navigate('AddExpense'); };
@@ -81,11 +82,11 @@ export function Home() {
       <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
           <View style={{ width: 42, height: 42, borderRadius: 13, backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <AppText style={{ fontWeight: '800', fontSize: 16, color: t.accent }}>AR</AppText>
+            <AppText style={{ fontWeight: '800', fontSize: 16, color: t.accent }}>{initials(displayName)}</AppText>
           </View>
           <View>
             <AppText style={{ fontSize: 12, color: t.faint, fontWeight: '600' }}>Good evening</AppText>
-            <AppText style={{ fontSize: 17, color: t.text, fontWeight: '700' }}>Aarav Sharma</AppText>
+            <AppText style={{ fontSize: 17, color: t.text, fontWeight: '700' }}>{displayName}</AppText>
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

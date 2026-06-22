@@ -17,6 +17,7 @@ export type { Category, Expense, Recurring, Draft } from './data';
 
 export interface NewCategoryInput { name: string; icon: IconName; color: string; }
 export interface NewRecurringInput { name: string; cat: string; amount: number; freq: string; due: number; }
+export interface ProfileInput { name: string; budget: number; theme: ThemeKey; }
 
 export interface Settings {
   budgetAlerts: boolean;
@@ -57,7 +58,11 @@ interface StoreValue {
   toast: Toast | null;
   confettiKey: number;
   locked: boolean;
+  onboarded: boolean;
+  profileName: string;
   setFilter: (patch: Partial<Filter>) => void;
+  saveProfile: (input: ProfileInput) => void;
+  completeOnboarding: (input: ProfileInput) => void;
   beginNewExpense: () => void;
   beginEditExpense: (id: string) => void;
   resetExpenseEntry: () => void;
@@ -105,6 +110,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<Toast | null>(null);
   const [confettiKey, setConfettiKey] = useState(0);
   const [locked, setLocked] = useState(false);
+  const [onboarded, setOnboarded] = useState(false);
+  const [profileName, setProfileName] = useState('');
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Mirrors settings.biometric for the AppState listener (avoids stale closures).
@@ -128,6 +135,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // Lock on cold start when the biometric lock is enabled.
         if (loadedSettings.biometric) setLocked(true);
         if (prefs.savedInsights) setSavedInsights(prefs.savedInsights as Record<string, boolean>);
+        if (prefs.onboarded === true) setOnboarded(true);
+        const savedName = (prefs.profile as { name?: string } | undefined)?.name;
+        if (typeof savedName === 'string') setProfileName(savedName);
       } catch {
         // leave defaults; UI still functions
       }
@@ -323,6 +333,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setBudget((b) => { const next = Math.max(1000, b + delta); writeDb((db) => setPref(db, 'budget', next)); return next; });
   }, []);
 
+  // Shared write path for the profile details captured in onboarding and the editor.
+  const persistProfile = useCallback((input: ProfileInput) => {
+    const name = input.name.trim();
+    const budget = Math.max(1000, Math.round(input.budget) || DEFAULT_BUDGET);
+    setProfileName(name);
+    setBudget(budget);
+    setThemeState(input.theme);
+    writeDb((db) => setPref(db, 'profile', { name }));
+    writeDb((db) => setPref(db, 'budget', budget));
+    writeDb((db) => setPref(db, 'theme', input.theme));
+  }, []);
+
+  // Edit path — persists and confirms with a toast (no onboarding side effects).
+  const saveProfile = useCallback((input: ProfileInput) => {
+    persistProfile(input);
+    showToast('Profile updated.', 'good');
+  }, [persistProfile, showToast]);
+
+  // First-run path — persists the same details and marks onboarding complete, which
+  // swaps the navigator from the onboarding flow into the app.
+  const completeOnboarding = useCallback((input: ProfileInput) => {
+    persistProfile(input);
+    setOnboarded(true);
+    writeDb((db) => setPref(db, 'onboarded', true));
+  }, [persistProfile]);
+
   const toggleRecur = useCallback((id: string) => {
     setRecurring((r) => {
       const next = r.map((x) => (x.id === id ? { ...x, paused: !x.paused } : x));
@@ -365,7 +401,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const value: StoreValue = {
     ready, expenses, categories, filter, theme, budget, draft, editingId,
     analyticsPeriod, donutCat, settings, savedInsights, recurring, toast, confettiKey, locked,
+    onboarded, profileName,
     setFilter,
+    saveProfile, completeOnboarding,
     beginNewExpense, beginEditExpense, resetExpenseEntry,
     setTheme, setDraft, pressKey, delKey, saveExpense, deleteExpense, clearExpenses, addCategory, addRecurring, toggleSetting,
     setBiometric, requestUnlock, changeBudget,

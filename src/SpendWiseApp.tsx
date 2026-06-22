@@ -3,14 +3,15 @@ import { View, StatusBar, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { ThemeContext, THEMES } from './theme';
 import { StoreProvider, useStore } from './store';
-import { RootNavigator, useNavTheme } from './navigation';
+import { RootNavigator, buildNavTheme } from './navigation';
 import { Toast } from './components/Toast';
 import { Confetti } from './components/Confetti';
+import { UpdateModal } from './components/UpdateModal';
 
 function Root() {
   const { ready, theme } = useStore();
   const t = THEMES[theme];
-  const navTheme = useNavTheme();
+  const navTheme = buildNavTheme(t);
 
   return (
     <ThemeContext.Provider value={t}>
@@ -28,6 +29,7 @@ function Root() {
         {/* Global overlays — not part of navigation, float above every screen. */}
         <Toast />
         <Confetti />
+        <UpdateModal />
       </View>
     </ThemeContext.Provider>
   );

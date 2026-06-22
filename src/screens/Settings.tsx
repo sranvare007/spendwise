@@ -10,6 +10,7 @@ import { Press } from '../components/Press';
 import { Toggle } from '../components/Toggle';
 import { useStore, Settings as SettingsType } from '../store';
 import { RootStackParamList } from '../navigation';
+import { initials } from '../utils';
 import { getBiometricCapability, BioCapability } from '../biometric';
 
 type SubRoute = 'Budgets' | 'Recurring' | 'Categories' | 'Export';
@@ -18,7 +19,8 @@ export function Settings() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, expenses, categories, clearExpenses } = useStore();
+  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, expenses, categories, clearExpenses, profileName } = useStore();
+  const displayName = profileName.trim() || 'there';
 
   const confirmClear = () => {
     if (expenses.length === 0) { clearExpenses(); return; }
@@ -71,15 +73,16 @@ export function Settings() {
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 130 }}>
         {/* Profile */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 16 }}>
+        <Press onPress={() => navigation.navigate('EditProfile')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 16 }}>
           <View style={{ width: 50, height: 50, borderRadius: 16, backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <AppText style={{ fontWeight: '800', fontSize: 18, color: t.accent }}>AR</AppText>
+            <AppText style={{ fontWeight: '800', fontSize: 18, color: t.accent }}>{initials(displayName)}</AppText>
           </View>
           <View style={{ flex: 1 }}>
-            <AppText style={{ fontSize: 16, fontWeight: '800', color: t.text }}>Aarav Sharma</AppText>
+            <AppText style={{ fontSize: 16, fontWeight: '800', color: t.text }}>{displayName}</AppText>
             <AppText style={{ fontSize: 13, color: t.faint }}>Free plan · Tap to manage</AppText>
           </View>
-        </View>
+          <Icon name="chevR" size={16} color={t.faint} strokeWidth={2.4} />
+        </Press>
 
         {/* Appearance */}
         <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 24, marginBottom: 10, marginLeft: 4 }}>Appearance</AppText>

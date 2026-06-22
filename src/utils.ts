@@ -5,6 +5,15 @@ export function pctW(n: number): DimensionValue {
   return `${Math.round(n)}%` as DimensionValue;
 }
 
+// Avatar initials from a display name: first letters of the first two words,
+// uppercased. Falls back to the first two characters, then '?' when empty.
+export function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
 // Date / time formatting helpers (manual to avoid Hermes Intl gaps)
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

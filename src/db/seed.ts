@@ -8,6 +8,8 @@ export const DEFAULT_PREFS: Record<string, unknown> = {
   filter: { range: 'month', cat: 'all', wn: 'all', q: '' },
   settings: { budgetAlerts: true, weeklySummary: true, recurringReminders: true, biometric: false },
   savedInsights: { i1: true },
+  onboarded: false,
+  profile: { name: '' },
 };
 
 // Populates default categories and preferences the first time the app runs

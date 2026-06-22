@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DefaultTheme, DarkTheme, Theme as NavTheme } from '@react-navigation/native';
 import { useStore } from '../store';
-import { useTheme } from '../theme';
+import { Theme } from '../theme';
 import { Home } from '../screens/Home';
 import { Analytics } from '../screens/Analytics';
 import { Insights } from '../screens/Insights';
@@ -12,6 +12,8 @@ import { SubScreen } from '../screens/SubScreen';
 import { AddExpenseModal } from '../components/AddExpenseModal';
 import { ThemeSheet } from '../components/ThemeSheet';
 import { LockScreen } from '../components/LockScreen';
+import { Onboarding } from '../screens/Onboarding';
+import { EditProfile } from '../screens/EditProfile';
 import { BottomBar } from '../components/BottomBar';
 
 // Which variant of the shared SubScreen to render. Derived from the route name so the
@@ -26,11 +28,13 @@ export const SUB_KIND_BY_ROUTE: Record<SubRouteName, SubKind> = {
 };
 
 export type RootStackParamList = {
+  Onboarding: undefined;
   Tabs: undefined;
   Budgets: undefined;
   Recurring: undefined;
   Categories: undefined;
   Export: undefined;
+  EditProfile: undefined;
   AddExpense: undefined;
   ThemeSheet: undefined;
   Lock: undefined;
@@ -60,13 +64,15 @@ function TabsNavigator() {
   );
 }
 
-// Root stack. `locked` gates the tree (auth-flow pattern): while locked only the Lock
-// screen exists, so unlocking (locked -> false) swaps the stack back to the app.
+// Root stack, gated with the auth-flow pattern. Priority: first-run onboarding, then the
+// biometric lock, then the app. Flipping `onboarded`/`locked` swaps the tree automatically.
 export function RootNavigator() {
-  const { locked } = useStore();
+  const { onboarded, locked } = useStore();
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {locked ? (
+      {!onboarded ? (
+        <Stack.Screen name="Onboarding" component={Onboarding} />
+      ) : locked ? (
         <Stack.Screen name="Lock" component={LockScreen} />
       ) : (
         <>
@@ -75,6 +81,7 @@ export function RootNavigator() {
           <Stack.Screen name="Recurring" component={SubScreen} />
           <Stack.Screen name="Categories" component={SubScreen} />
           <Stack.Screen name="Export" component={SubScreen} />
+          <Stack.Screen name="EditProfile" component={EditProfile} />
           <Stack.Group screenOptions={{ presentation: 'transparentModal', animation: 'fade' }}>
             <Stack.Screen name="AddExpense" component={AddExpenseModal} />
             <Stack.Screen name="ThemeSheet" component={ThemeSheet} />
@@ -85,10 +92,11 @@ export function RootNavigator() {
   );
 }
 
-// Map the active app theme onto a React Navigation theme so screen transitions use the
-// app background instead of flashing white.
-export function useNavTheme(): NavTheme {
-  const t = useTheme();
+// Map the active app theme onto a React Navigation theme so screen backgrounds and
+// transitions use the selected theme. Takes the theme explicitly (rather than reading
+// ThemeContext) because the caller lives above the ThemeContext.Provider — reading the
+// context there would always yield the default (mint) theme and desync screen backgrounds.
+export function buildNavTheme(t: Theme): NavTheme {
   const base = t.dark ? DarkTheme : DefaultTheme;
   return {
     ...base,
