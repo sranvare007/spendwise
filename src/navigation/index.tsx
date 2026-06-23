@@ -14,6 +14,7 @@ import { ThemeSheet } from '../components/ThemeSheet';
 import { LockScreen } from '../components/LockScreen';
 import { Onboarding } from '../screens/Onboarding';
 import { EditProfile } from '../screens/EditProfile';
+import { PaymentSources } from '../screens/PaymentSources';
 import { BottomBar } from '../components/BottomBar';
 
 // Which variant of the shared SubScreen to render. Derived from the route name so the
@@ -35,6 +36,7 @@ export type RootStackParamList = {
   Categories: undefined;
   Export: undefined;
   EditProfile: undefined;
+  PaymentSources: undefined;
   AddExpense: undefined;
   ThemeSheet: undefined;
   Lock: undefined;
@@ -82,6 +84,7 @@ export function RootNavigator() {
           <Stack.Screen name="Categories" component={SubScreen} />
           <Stack.Screen name="Export" component={SubScreen} />
           <Stack.Screen name="EditProfile" component={EditProfile} />
+          <Stack.Screen name="PaymentSources" component={PaymentSources} />
           <Stack.Group screenOptions={{ presentation: 'transparentModal', animation: 'fade' }}>
             <Stack.Screen name="AddExpense" component={AddExpenseModal} />
             <Stack.Screen name="ThemeSheet" component={ThemeSheet} />

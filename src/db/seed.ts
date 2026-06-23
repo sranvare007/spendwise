@@ -64,3 +64,25 @@ export async function ensureDefaultCategories(db: DB): Promise<void> {
     }
   });
 }
+
+// Idempotent safety net for the payment-source schema. Runs on every launch so the
+// payment_accounts table and expenses.account_id column are guaranteed to exist even if
+// the versioned migration didn't land (e.g. a partial/interrupted migration). Cheap —
+// CREATE IF NOT EXISTS plus a single PRAGMA check.
+export async function ensurePaymentSchema(db: DB): Promise<void> {
+  await db.execAsync(
+    `CREATE TABLE IF NOT EXISTS payment_accounts (
+      id         TEXT PRIMARY KEY NOT NULL,
+      name       TEXT NOT NULL,
+      type       TEXT NOT NULL,
+      color_hex  TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+  );
+  const cols = await db.getAllAsync<{ name: string }>('PRAGMA table_info(expenses)');
+  if (!cols.some((c) => c.name === 'account_id')) {
+    await db.execAsync('ALTER TABLE expenses ADD COLUMN account_id TEXT;');
+  }
+}

@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { SCHEMA_VERSION, MIGRATIONS } from './schema';
-import { seedIfEmpty, ensureDefaultCategories } from './seed';
+import { seedIfEmpty, ensureDefaultCategories, ensurePaymentSchema } from './seed';
 
 export type DB = SQLite.SQLiteDatabase;
 
@@ -31,6 +31,7 @@ async function init(): Promise<DB> {
     await db.execAsync(`PRAGMA user_version = ${SCHEMA_VERSION};`);
   }
 
+  await ensurePaymentSchema(db);
   await seedIfEmpty(db);
   await ensureDefaultCategories(db);
   return db;

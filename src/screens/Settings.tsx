@@ -13,13 +13,13 @@ import { RootStackParamList } from '../navigation';
 import { initials } from '../utils';
 import { getBiometricCapability, BioCapability } from '../biometric';
 
-type SubRoute = 'Budgets' | 'Recurring' | 'Categories' | 'Export';
+type SubRoute = 'Budgets' | 'Recurring' | 'Categories' | 'Export' | 'PaymentSources';
 
 export function Settings() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, expenses, categories, clearExpenses, profileName } = useStore();
+  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, expenses, categories, accounts, clearExpenses, profileName } = useStore();
   const displayName = profileName.trim() || 'there';
 
   const confirmClear = () => {
@@ -55,6 +55,7 @@ export function Settings() {
     { icon: 'target', color: '#07CB73', label: 'Budgets', detail: '₹' + inr(budget), route: 'Budgets' },
     { icon: 'repeat', color: '#5B8DEF', label: 'Recurring expenses', detail: recurring.filter((r) => !r.paused).length + ' active', route: 'Recurring' },
     { icon: 'tag', color: '#C77DFF', label: 'Categories', detail: String(categories.length), route: 'Categories' },
+    { icon: 'card', color: '#21C0CE', label: 'Payment sources', detail: String(accounts.length), route: 'PaymentSources' },
     { icon: 'download', color: '#FFB23E', label: 'Export data', detail: 'CSV', route: 'Export' },
   ];
 

@@ -1,5 +1,5 @@
 import type { DB } from './database';
-import { Expense, Recurring, Category } from '../data';
+import { Expense, Recurring, Category, PaymentSource } from '../data';
 
 // ---- Row shapes returned by SQLite ----
 interface ExpenseRow {
@@ -9,6 +9,13 @@ interface ExpenseRow {
   category_id: string;
   classification: 'NEED' | 'WANT';
   date: string;
+  account_id: string | null;
+}
+interface PaymentAccountRow {
+  id: string;
+  name: string;
+  type: string;
+  color_hex: string;
 }
 interface RecurringRow {
   id: string;
@@ -40,39 +47,40 @@ export interface NewExpense {
   notes?: string | null;
   isRecurring?: boolean;
   recurrenceRuleId?: string | null;
+  account?: string | null;
 }
 
 // ---------- Expenses ----------
 export async function getExpenses(db: DB): Promise<Expense[]> {
   const rows = await db.getAllAsync<ExpenseRow>(
-    `SELECT id, amount, description, category_id, classification, date
+    `SELECT id, amount, description, category_id, classification, date, account_id
        FROM expenses
       WHERE is_deleted = 0
       ORDER BY date DESC`,
   );
-  return rows.map((r) => ({ id: r.id, amount: r.amount, desc: r.description, cat: r.category_id, wn: r.classification, date: r.date }));
+  return rows.map((r) => ({ id: r.id, amount: r.amount, desc: r.description, cat: r.category_id, wn: r.classification, date: r.date, account: r.account_id }));
 }
 
 export async function insertExpense(db: DB, e: NewExpense): Promise<void> {
   const now = new Date().toISOString();
   await db.runAsync(
     `INSERT INTO expenses
-       (id, amount, currency, description, category_id, classification, date, notes, is_recurring, recurrence_rule_id, is_deleted, deleted_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?)`,
+       (id, amount, currency, description, category_id, classification, date, notes, is_recurring, recurrence_rule_id, account_id, is_deleted, deleted_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?)`,
     e.id, e.amount, e.currency ?? 'INR', e.desc, e.cat, e.wn, e.date,
-    e.notes ?? null, e.isRecurring ? 1 : 0, e.recurrenceRuleId ?? null, now, now,
+    e.notes ?? null, e.isRecurring ? 1 : 0, e.recurrenceRuleId ?? null, e.account ?? null, now, now,
   );
 }
 
 // Updates an existing expense's editable fields. The id is preserved; amount,
-// description, category, classification and date all change.
+// description, category, classification, date and payment source all change.
 export async function updateExpense(db: DB, e: NewExpense): Promise<void> {
   const now = new Date().toISOString();
   await db.runAsync(
     `UPDATE expenses
-        SET amount = ?, description = ?, category_id = ?, classification = ?, date = ?, updated_at = ?
+        SET amount = ?, description = ?, category_id = ?, classification = ?, date = ?, account_id = ?, updated_at = ?
       WHERE id = ?`,
-    e.amount, e.desc, e.cat, e.wn, e.date, now, e.id,
+    e.amount, e.desc, e.cat, e.wn, e.date, e.account ?? null, now, e.id,
   );
 }
 
@@ -117,6 +125,30 @@ export async function insertRecurring(db: DB, r: Recurring): Promise<void> {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     r.id, r.name, r.cat, r.amount, r.freq, r.due, r.paused ? 1 : 0, sortOrder, now, now,
   );
+}
+
+// ---------- Payment sources ----------
+export async function getPaymentAccounts(db: DB): Promise<PaymentSource[]> {
+  const rows = await db.getAllAsync<PaymentAccountRow>(
+    'SELECT id, name, type, color_hex FROM payment_accounts ORDER BY sort_order ASC',
+  );
+  return rows.map((r) => ({ id: r.id, name: r.name, type: r.type as PaymentSource['type'], color: r.color_hex }));
+}
+
+// Inserts a user-created payment source. New sources sort after all existing ones.
+export async function insertPaymentAccount(db: DB, s: PaymentSource): Promise<void> {
+  const now = new Date().toISOString();
+  const row = await db.getFirstAsync<{ n: number }>('SELECT COALESCE(MAX(sort_order), -1) + 1 AS n FROM payment_accounts');
+  const sortOrder = row?.n ?? 0;
+  await db.runAsync(
+    `INSERT INTO payment_accounts (id, name, type, color_hex, sort_order, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    s.id, s.name, s.type, s.color, sortOrder, now, now,
+  );
+}
+
+export async function deletePaymentAccount(db: DB, id: string): Promise<void> {
+  await db.runAsync('DELETE FROM payment_accounts WHERE id = ?', id);
 }
 
 // ---------- Categories ----------

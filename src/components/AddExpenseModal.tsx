@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, TextInput, ScrollView, Animated, Pressable, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppText } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, tint } from '../theme';
 import { Icon } from '../icons';
 import { Press } from './Press';
-import { useStore } from '../store';
+import { useStore, paymentTypeMeta } from '../store';
+import { RootStackParamList } from '../navigation';
 import { monthName, shortDate } from '../utils';
 
 const SCREEN_H = Dimensions.get('window').height;
@@ -37,8 +39,8 @@ function monthCells(view: Date): (Date | null)[] {
 export function AddExpenseModal() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
-  const { draft, setDraft, pressKey, delKey, saveExpense, resetExpenseEntry, categories, editingId, deleteExpense } = useStore();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { draft, setDraft, pressKey, delKey, saveExpense, resetExpenseEntry, categories, editingId, deleteExpense, accounts } = useStore();
   const isEditing = editingId !== null;
 
   const closeModal = () => navigation.goBack();
@@ -188,6 +190,35 @@ export function AddExpenseModal() {
               );
             })}
           </ScrollView>
+
+          {/* Payment source (optional) */}
+          <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.5, marginLeft: 2, marginBottom: 9 }}>Payment source · optional</AppText>
+          {accounts.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginHorizontal: -20, marginBottom: 16 }} contentContainerStyle={{ gap: 9, paddingHorizontal: 20, paddingVertical: 2 }}>
+              {accounts.map((s) => {
+                const active = draft.account === s.id;
+                const meta = paymentTypeMeta(s.type);
+                return (
+                  <Press key={s.id} onPress={() => setDraft({ account: active ? null : s.id })} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 14, backgroundColor: active ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: active ? t.accent : 'transparent' }}>
+                    <View style={{ width: 28, height: 28, borderRadius: 9, backgroundColor: tint(s.color, t.dark), alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name={meta.icon} size={15} color={s.color} />
+                    </View>
+                    <AppText numberOfLines={1} style={{ fontSize: 13, fontWeight: '700', color: active ? t.accent : t.text, maxWidth: 140 }}>{s.name}</AppText>
+                  </Press>
+                );
+              })}
+              <Press onPress={() => navigation.navigate('PaymentSources')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 13, borderRadius: 14, backgroundColor: t.card2, borderWidth: 1.5, borderColor: 'transparent' }}>
+                <Icon name="plus" size={15} color={t.accent} strokeWidth={2.6} />
+                <AppText style={{ fontSize: 13, fontWeight: '700', color: t.accent }}>New</AppText>
+              </Press>
+            </ScrollView>
+          ) : (
+            <Press onPress={() => navigation.navigate('PaymentSources')} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 14, backgroundColor: t.card2, marginBottom: 16 }}>
+              <Icon name="plus" size={16} color={t.accent} strokeWidth={2.6} />
+              <AppText style={{ flex: 1, fontSize: 13, fontWeight: '700', color: t.sub }}>Add a payment source</AppText>
+              <Icon name="chevR" size={15} color={t.faint} strokeWidth={2.4} />
+            </Press>
+          )}
 
           {/* Keypad */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4.5 }}>

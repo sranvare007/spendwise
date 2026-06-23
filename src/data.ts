@@ -15,6 +15,16 @@ export interface Expense {
   cat: string;
   wn: 'NEED' | 'WANT';
   date: string;
+  account?: string | null; // id of the payment source used, or null
+}
+
+// A payment source the user pays through (credit card, bank account, cash, etc.).
+export type PaymentType = 'card' | 'bank' | 'cash' | 'upi' | 'wallet';
+export interface PaymentSource {
+  id: string;
+  name: string;
+  type: PaymentType;
+  color: string;
 }
 
 export interface Recurring {
@@ -33,6 +43,7 @@ export interface Draft {
   cat: string | null;
   wn: 'NEED' | 'WANT';
   date: string; // ISO string of the expense date
+  account: string | null; // selected payment source id, or null
 }
 
 export const CATS: Category[] = [
@@ -71,6 +82,20 @@ export const CATEGORY_COLORS: string[] = [
   // Yellows / oranges / browns
   '#F4C20D', '#FFB23E', '#FF9F1C', '#F2784B', '#B5784F', '#9AA7B2',
 ];
+
+// Payment source types offered when creating a source, each mapped to an icon.
+export const PAYMENT_TYPES: { type: PaymentType; label: string; icon: IconName }[] = [
+  { type: 'card', label: 'Card', icon: 'card' },
+  { type: 'bank', label: 'Bank', icon: 'piggy' },
+  { type: 'cash', label: 'Cash', icon: 'cash' },
+  { type: 'upi', label: 'UPI', icon: 'bolt' },
+  { type: 'wallet', label: 'Wallet', icon: 'wallet' },
+];
+
+const PAYMENT_TYPE_FALLBACK = PAYMENT_TYPES[0];
+export function paymentTypeMeta(type: string): { type: PaymentType; label: string; icon: IconName } {
+  return PAYMENT_TYPES.find((p) => p.type === type) ?? PAYMENT_TYPE_FALLBACK;
+}
 
 // Live registry of all categories (system + custom). The store replaces this
 // once categories are loaded from SQLite so synchronous catById() lookups in

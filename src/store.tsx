@@ -3,20 +3,22 @@ import { Share, AppState } from 'react-native';
 import { ThemeKey } from './theme';
 import { getBiometricCapability, runAuth, AuthOutcome } from './biometric';
 import { monthKey } from './utils';
-import { Expense, Recurring, Draft, Category, DEFAULT_BUDGET, catById, CATS, setCategoryRegistry } from './data';
+import { Expense, Recurring, Draft, Category, PaymentSource, PaymentType, DEFAULT_BUDGET, catById, CATS, setCategoryRegistry } from './data';
 import { IconName } from './icons';
 import { getDatabase } from './db/database';
 import {
   getExpenses, insertExpense, updateExpense, softDeleteExpense, clearAllExpenses, getRecurring, setRecurringPaused,
   insertRecurring, getAllPrefs, setPref, getCategories, insertCategory,
+  getPaymentAccounts, insertPaymentAccount, deletePaymentAccount,
 } from './db/repositories';
 
 // Re-export shared data so existing screen imports keep working.
-export { CATS, CAT_BUDGETS, CATEGORY_COLORS, catById, DEFAULT_BUDGET } from './data';
-export type { Category, Expense, Recurring, Draft } from './data';
+export { CATS, CAT_BUDGETS, CATEGORY_COLORS, catById, DEFAULT_BUDGET, PAYMENT_TYPES, paymentTypeMeta } from './data';
+export type { Category, Expense, Recurring, Draft, PaymentSource, PaymentType } from './data';
 
 export interface NewCategoryInput { name: string; icon: IconName; color: string; }
 export interface NewRecurringInput { name: string; cat: string; amount: number; freq: string; due: number; }
+export interface NewPaymentInput { name: string; type: PaymentType; color: string; }
 export interface ProfileInput { name: string; budget: number; theme: ThemeKey; }
 
 export interface Settings {
@@ -32,7 +34,7 @@ export interface Filter { range: RangeKey; cat: string; wn: 'all' | 'NEED' | 'WA
 export interface Toast { msg: string; tone: 'good' | 'warn' | 'bad'; }
 
 // Fresh draft for a new entry — date defaults to "now" so an untouched draft logs today.
-const freshDraft = (): Draft => ({ amount: '', desc: '', cat: null, wn: 'NEED', date: new Date().toISOString() });
+const freshDraft = (): Draft => ({ amount: '', desc: '', cat: null, wn: 'NEED', date: new Date().toISOString(), account: null });
 const DEFAULT_SETTINGS: Settings = { budgetAlerts: true, weeklySummary: true, recurringReminders: true, biometric: false };
 const DEFAULT_FILTER: Filter = { range: 'month', cat: 'all', wn: 'all', q: '' };
 
@@ -45,6 +47,7 @@ interface StoreValue {
   ready: boolean;
   expenses: Expense[];
   categories: Category[];
+  accounts: PaymentSource[];
   filter: Filter;
   theme: ThemeKey;
   budget: number;
@@ -75,6 +78,8 @@ interface StoreValue {
   clearExpenses: () => void;
   addCategory: (input: NewCategoryInput) => void;
   addRecurring: (input: NewRecurringInput) => void;
+  addPaymentSource: (input: NewPaymentInput) => PaymentSource;
+  deletePaymentSource: (id: string) => void;
   toggleSetting: (key: keyof Settings) => void;
   setBiometric: (enabled: boolean) => void;
   requestUnlock: () => Promise<AuthOutcome>;
@@ -97,6 +102,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>(CATS);
+  const [accounts, setAccounts] = useState<PaymentSource[]>([]);
   const [filter, setFilterState] = useState<Filter>(DEFAULT_FILTER);
   const [theme, setThemeState] = useState<ThemeKey>('mint');
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
@@ -122,9 +128,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const db = await getDatabase();
-        const [exp, rec, prefs, cats] = await Promise.all([getExpenses(db), getRecurring(db), getAllPrefs(db), getCategories(db)]);
+        const [exp, rec, prefs, cats, accts] = await Promise.all([getExpenses(db), getRecurring(db), getAllPrefs(db), getCategories(db), getPaymentAccounts(db)]);
         setExpenses(exp);
         setRecurring(rec);
+        setAccounts(accts);
         if (cats.length) { setCategories(cats); setCategoryRegistry(cats); }
         if (prefs.theme) setThemeState(prefs.theme as ThemeKey);
         if (typeof prefs.budget === 'number') setBudget(prefs.budget);
@@ -205,7 +212,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (editingId) {
       const orig = expenses.find((e) => e.id === editingId);
       if (!orig) return true;
-      const updated: Expense = { ...orig, amount: amt, desc: draft.desc.trim(), cat: draft.cat, wn: draft.wn, date: draft.date };
+      const updated: Expense = { ...orig, amount: amt, desc: draft.desc.trim(), cat: draft.cat, wn: draft.wn, date: draft.date, account: draft.account };
       setExpenses((arr) => arr.map((e) => (e.id === editingId ? updated : e)));
       writeDb((db) => updateExpense(db, { ...updated, currency: 'INR' }));
       showToast('Expense updated.', 'good');
@@ -213,7 +220,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     const exp: Expense = {
-      id: 'u' + Date.now(), amount: amt, desc: draft.desc.trim(), cat: draft.cat, wn: draft.wn, date: draft.date,
+      id: 'u' + Date.now(), amount: amt, desc: draft.desc.trim(), cat: draft.cat, wn: draft.wn, date: draft.date, account: draft.account,
     };
     const next = [exp, ...expenses];
     setExpenses(next);
@@ -243,7 +250,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const beginEditExpense = useCallback((id: string) => {
     const e = expenses.find((x) => x.id === id);
     if (!e) return;
-    setDraftState({ amount: String(e.amount), desc: e.desc, cat: e.cat, wn: e.wn, date: e.date });
+    setDraftState({ amount: String(e.amount), desc: e.desc, cat: e.cat, wn: e.wn, date: e.date, account: e.account ?? null });
     setEditingId(id);
   }, [expenses]);
 
@@ -380,6 +387,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     showToast('Recurring "' + name + '" added.', 'good');
   }, [showToast]);
 
+  // Creates a payment source and returns it so callers (e.g. the Add-Expense modal)
+  // can immediately select the new source. Name is required.
+  const addPaymentSource = useCallback((input: NewPaymentInput): PaymentSource => {
+    const s: PaymentSource = { id: 'p' + Date.now(), name: input.name.trim(), type: input.type, color: input.color };
+    setAccounts((arr) => [...arr, s]);
+    writeDb((db) => insertPaymentAccount(db, s));
+    showToast('Payment source "' + s.name + '" added.', 'good');
+    return s;
+  }, [showToast]);
+
+  const deletePaymentSource = useCallback((id: string) => {
+    setAccounts((arr) => arr.filter((s) => s.id !== id));
+    writeDb((db) => deletePaymentAccount(db, id));
+    showToast('Payment source removed.', 'warn');
+  }, [showToast]);
+
   const toggleInsight = useCallback((id: string) => {
     setSavedInsights((s) => { const next = { ...s, [id]: !s[id] }; writeDb((db) => setPref(db, 'savedInsights', next)); return next; });
   }, []);
@@ -399,12 +422,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [expenses, showToast]);
 
   const value: StoreValue = {
-    ready, expenses, categories, filter, theme, budget, draft, editingId,
+    ready, expenses, categories, accounts, filter, theme, budget, draft, editingId,
     analyticsPeriod, donutCat, settings, savedInsights, recurring, toast, confettiKey, locked,
     onboarded, profileName,
     setFilter,
     saveProfile, completeOnboarding,
     beginNewExpense, beginEditExpense, resetExpenseEntry,
+    addPaymentSource, deletePaymentSource,
     setTheme, setDraft, pressKey, delKey, saveExpense, deleteExpense, clearExpenses, addCategory, addRecurring, toggleSetting,
     setBiometric, requestUnlock, changeBudget,
     toggleRecur, toggleInsight, setAnalyticsPeriod, setDonutCat, exportCsv,

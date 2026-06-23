@@ -3,7 +3,7 @@
 // supporting tables for receipt images, recurring subscriptions and app preferences.
 // Migrations are driven by PRAGMA user_version (see database.ts).
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 // Statements applied to move the DB from version 0 (fresh) to SCHEMA_VERSION.
 // Each string is a full SQL statement run in order inside a transaction.
@@ -91,5 +91,20 @@ export const MIGRATIONS: Record<number, string[]> = {
     `CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses (category_id);`,
     `CREATE INDEX IF NOT EXISTS idx_expenses_active ON expenses (is_deleted, date);`,
     `CREATE INDEX IF NOT EXISTS idx_receipts_expense ON receipt_images (expense_id);`,
+  ],
+
+  // v2 — payment sources (credit cards, bank accounts, cash, etc.) and the link from
+  // an expense to the source it was paid through.
+  2: [
+    `CREATE TABLE IF NOT EXISTS payment_accounts (
+      id         TEXT PRIMARY KEY NOT NULL,
+      name       TEXT NOT NULL,
+      type       TEXT NOT NULL,
+      color_hex  TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );`,
+    `ALTER TABLE expenses ADD COLUMN account_id TEXT;`,
   ],
 };
