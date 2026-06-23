@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, TextInput, Animated, KeyboardAvoidingView, Platform } from 'react-native';
 import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme, inr, tint, ThemeKey, THEME_META } from '../theme';
+import { THEMES, inr, ThemeKey, THEME_META } from '../theme';
 import { Icon } from '../icons';
 import { Press } from '../components/Press';
 import { useStore } from '../store';
@@ -14,7 +14,6 @@ const TOTAL_STEPS = 5; // welcome, name, budget, theme, done
 // First-run onboarding. Collects name + monthly budget + theme across paged steps and
 // commits them via completeOnboarding(), which swaps the navigator into the app.
 export function Onboarding() {
-  const t = useTheme();
   const insets = useSafeAreaInsets();
   const { theme: storeTheme, budget: storeBudget, completeOnboarding } = useStore();
 
@@ -22,6 +21,10 @@ export function Onboarding() {
   const [name, setName] = useState('');
   const [budget, setBudget] = useState(storeBudget);
   const [theme, setTheme] = useState<ThemeKey>(storeTheme);
+
+  // Render from the locally-selected theme so the background and buttons preview the
+  // choice live on the theme step (the store theme isn't committed until Finish).
+  const t = THEMES[theme];
 
   // Per-step fade/slide, mirroring the old SubScreen transition.
   const anim = useRef(new Animated.Value(0)).current;
@@ -45,7 +48,7 @@ export function Onboarding() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.bg }}>
-      <View style={{ flex: 1, paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 16) + 8, paddingHorizontal: 24 }}>
+      <View style={{ flex: 1, paddingTop: insets.top + 16, paddingBottom: Math.max(insets.bottom, 16) + 32, paddingHorizontal: 24 }}>
         {/* Progress dots */}
         <View style={{ flexDirection: 'row', gap: 7, justifyContent: 'center', marginBottom: 8 }}>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
@@ -58,7 +61,7 @@ export function Onboarding() {
           {step === 0 && (
             <View style={{ alignItems: 'center' }}>
               <View style={{ width: 92, height: 92, borderRadius: 28, backgroundColor: t.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name="piggy" size={46} color={t.accent} strokeWidth={1.9} />
+                <AppText style={{ fontSize: 52, fontWeight: '800', color: t.accent, lineHeight: 60 }}>₹</AppText>
               </View>
               <AppText style={{ fontSize: 26, fontWeight: '800', color: t.text, marginTop: 24, textAlign: 'center' }}>Welcome to SpendWise</AppText>
               <AppText style={{ fontSize: 14.5, color: t.sub, marginTop: 10, textAlign: 'center', lineHeight: 21, paddingHorizontal: 8 }}>Track spending, stick to a budget, and see where your money goes. Let's set up a few things first.</AppText>
