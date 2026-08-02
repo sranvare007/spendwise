@@ -8,12 +8,36 @@ export interface Category {
   icon: IconName;
 }
 
+// How a spend is classified in the split: essential, discretionary, or money put to work.
+export type Classification = 'NEED' | 'WANT' | 'INVEST';
+
+// `label` tags a single expense ("Need"); `group` names the bucket in filters and splits.
+export const CLASSIFICATIONS: { key: Classification; label: string; group: string }[] = [
+  { key: 'NEED', label: 'Need', group: 'Needs' },
+  { key: 'WANT', label: 'Want', group: 'Wants' },
+  { key: 'INVEST', label: 'Invest', group: 'Invest' },
+];
+
+// Investments have no theme token of their own (needs use accent, wants use pop),
+// so they carry a fixed accent that reads on all three themes.
+export const INVEST_COLOR = '#5B8DEF';
+
+export function wnLabel(wn: string): string {
+  return CLASSIFICATIONS.find((c) => c.key === wn)?.label ?? 'Need';
+}
+
+// Total that counts against the monthly budget. Investments are opt-out (Budgets →
+// "Count investments"): some people treat a SIP as spending, others as money set aside.
+export function budgetSpend(list: Expense[], includeInvestments: boolean): number {
+  return list.reduce((s, e) => (includeInvestments || e.wn !== 'INVEST' ? s + e.amount : s), 0);
+}
+
 export interface Expense {
   id: string;
   amount: number;
   desc: string;
   cat: string;
-  wn: 'NEED' | 'WANT';
+  wn: Classification;
   date: string;
   account?: string | null; // id of the payment source used, or null
 }
@@ -41,7 +65,7 @@ export interface Draft {
   amount: string;
   desc: string;
   cat: string | null;
-  wn: 'NEED' | 'WANT';
+  wn: Classification;
   date: string; // ISO string of the expense date
   account: string | null; // selected payment source id, or null
 }

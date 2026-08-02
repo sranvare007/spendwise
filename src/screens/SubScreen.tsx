@@ -7,7 +7,7 @@ import { useTheme, inr, tint } from '../theme';
 import { Icon, IconName, CATEGORY_ICONS } from '../icons';
 import { Press } from '../components/Press';
 import { Toggle } from '../components/Toggle';
-import { useStore, CAT_BUDGETS, CATEGORY_COLORS, catById } from '../store';
+import { useStore, CAT_BUDGETS, CATEGORY_COLORS, catById, wnLabel, budgetSpend, INVEST_COLOR } from '../store';
 import { SUB_KIND_BY_ROUTE, SubRouteName } from '../navigation';
 import { monthKey, numericDate, pctW } from '../utils';
 
@@ -18,14 +18,17 @@ export function SubScreen() {
   // All four sub-screens share this component; the route name selects the variant.
   const route = useRoute();
   const sub = SUB_KIND_BY_ROUTE[route.name as SubRouteName];
-  const { expenses, budget, changeBudget, recurring, toggleRecur, exportCsv } = useStore();
+  const { expenses, budget, changeBudget, recurring, toggleRecur, exportCsv, settings, toggleSetting } = useStore();
 
-  const { spent, left, monthExp } = useMemo(() => {
+  // Investments only count here when the user opted them in — same rule as the Home hero.
+  const countInvest = settings.investInBudget;
+  const { spent, left, invested, monthExp } = useMemo(() => {
     const tm = monthKey(new Date().toISOString());
     const me = expenses.filter((e) => monthKey(e.date) === tm);
-    const sp = me.reduce((s, e) => s + e.amount, 0);
-    return { spent: sp, left: Math.max(0, budget - sp), monthExp: me };
-  }, [expenses, budget]);
+    const sp = budgetSpend(me, countInvest);
+    const inv = me.filter((e) => e.wn === 'INVEST').reduce((s, e) => s + e.amount, 0);
+    return { spent: sp, left: Math.max(0, budget - sp), invested: inv, monthExp: me };
+  }, [expenses, budget, countInvest]);
 
   const title = sub === 'budgets' ? 'Budgets' : sub === 'recurring' ? 'Recurring' : sub === 'export' ? 'Export data' : sub === 'categories' ? 'Categories' : '';
 
@@ -33,17 +36,19 @@ export function SubScreen() {
     Object.keys(CAT_BUDGETS).map((id) => {
       const c = catById(id);
       const cb = CAT_BUDGETS[id];
-      const sp = monthExp.filter((e) => e.cat === id).reduce((s, e) => s + e.amount, 0);
+      // Excluded investments stay out of the per-category bars too, so this screen
+      // tells one consistent story.
+      const sp = budgetSpend(monthExp.filter((e) => e.cat === id), countInvest);
       const r = sp / cb;
       const tc = r < 0.75 ? '#14B870' : r < 0.95 ? '#FF9F1C' : '#F0453A';
       return { id, name: c.name, color: c.color, icon: c.icon, spent: sp, budget: cb, pct: Math.min(100, r * 100), toneColor: tc };
-    }), [monthExp]);
+    }), [monthExp, countInvest]);
 
   const csvPreview = useMemo(() => {
-    const head = 'Date,Description,Category,Amount,W/N';
+    const head = 'Date,Description,Category,Amount,Class';
     const rows = expenses.slice(0, 4).map((e) => {
       const d = new Date(e.date);
-      return `${numericDate(d)},${e.desc.slice(0, 12)},${catById(e.cat).short},${e.amount},${e.wn === 'NEED' ? 'Need' : 'Want'}`;
+      return `${numericDate(d)},${e.desc.slice(0, 12)},${catById(e.cat).short},${e.amount},${wnLabel(e.wn)}`;
     });
     const more = expenses.length > 4 ? `\n… +${expenses.length - 4} more rows` : '';
     return head + '\n' + rows.join('\n') + more;
@@ -76,6 +81,23 @@ export function SubScreen() {
                 </Press>
               </View>
               <AppText style={{ fontSize: 12.5, color: t.heroText, textAlign: 'center', marginTop: 10 }}>₹{inr(spent)} spent · ₹{inr(left)} remaining</AppText>
+              {!countInvest && invested > 0 && (
+                <AppText style={{ fontSize: 11.5, color: t.heroText, textAlign: 'center', marginTop: 5 }}>₹{inr(invested)} invested, tracked separately</AppText>
+              )}
+            </View>
+
+            {/* Whether investments eat into the budget or sit beside it. */}
+            <View style={{ marginTop: 14, borderRadius: 16, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 13 }}>
+              <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: tint(INVEST_COLOR, t.dark), alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="piggy" size={18} color={INVEST_COLOR} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <AppText style={{ fontSize: 14, fontWeight: '700', color: t.text }}>Count investments</AppText>
+                <AppText style={{ fontSize: 12, color: t.faint, marginTop: 2, lineHeight: 17 }}>
+                  {countInvest ? 'Investments spend from your monthly budget.' : 'Investments are tracked outside your monthly budget.'}
+                </AppText>
+              </View>
+              <Toggle on={countInvest} onToggle={() => toggleSetting('investInBudget')} />
             </View>
 
             <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 22, marginBottom: 10, marginLeft: 4 }}>By category</AppText>

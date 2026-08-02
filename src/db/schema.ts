@@ -3,7 +3,45 @@
 // supporting tables for receipt images, recurring subscriptions and app preferences.
 // Migrations are driven by PRAGMA user_version (see database.ts).
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
+
+// v3 — widen the expenses.classification CHECK to allow 'INVEST'. SQLite cannot alter a
+// CHECK constraint in place, so the table is rebuilt (create → copy → drop → rename) per
+// the documented 12-step procedure. Exported so the seed safety net can replay it.
+// Runs with foreign_keys OFF (see database.ts) — the DROP would otherwise cascade
+// receipt_images away.
+export const EXPENSES_REBUILD_V3: string[] = [
+  `DROP TABLE IF EXISTS expenses_new;`,
+  `CREATE TABLE expenses_new (
+    id                 TEXT PRIMARY KEY NOT NULL,
+    amount             REAL NOT NULL CHECK (amount >= 0),
+    currency           TEXT NOT NULL DEFAULT 'INR',
+    description        TEXT NOT NULL,
+    category_id        TEXT NOT NULL REFERENCES categories(id),
+    classification     TEXT NOT NULL CHECK (classification IN ('WANT','NEED','INVEST')),
+    date               TEXT NOT NULL,
+    notes              TEXT,
+    is_recurring       INTEGER NOT NULL DEFAULT 0,
+    recurrence_rule_id TEXT REFERENCES recurrence_rules(id),
+    account_id         TEXT,
+    is_deleted         INTEGER NOT NULL DEFAULT 0,
+    deleted_at         TEXT,
+    created_at         TEXT NOT NULL,
+    updated_at         TEXT NOT NULL
+  );`,
+  `INSERT INTO expenses_new
+     (id, amount, currency, description, category_id, classification, date, notes,
+      is_recurring, recurrence_rule_id, account_id, is_deleted, deleted_at, created_at, updated_at)
+   SELECT id, amount, currency, description, category_id, classification, date, notes,
+          is_recurring, recurrence_rule_id, account_id, is_deleted, deleted_at, created_at, updated_at
+     FROM expenses;`,
+  `DROP TABLE expenses;`,
+  `ALTER TABLE expenses_new RENAME TO expenses;`,
+  // Indexes died with the old table — recreate them.
+  `CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses (date);`,
+  `CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses (category_id);`,
+  `CREATE INDEX IF NOT EXISTS idx_expenses_active ON expenses (is_deleted, date);`,
+];
 
 // Statements applied to move the DB from version 0 (fresh) to SCHEMA_VERSION.
 // Each string is a full SQL statement run in order inside a transaction.
@@ -107,4 +145,7 @@ export const MIGRATIONS: Record<number, string[]> = {
     );`,
     `ALTER TABLE expenses ADD COLUMN account_id TEXT;`,
   ],
+
+  // v3 — allow the 'INVEST' classification alongside WANT/NEED.
+  3: EXPENSES_REBUILD_V3,
 };

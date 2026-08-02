@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, hexA, tint } from '../theme';
 import { Icon, IconName } from '../icons';
 import { Press } from '../components/Press';
-import { useStore, catById } from '../store';
+import { useStore, catById, CLASSIFICATIONS, INVEST_COLOR, wnLabel, budgetSpend } from '../store';
+import type { Classification } from '../store';
 import { RootStackParamList } from '../navigation';
 import { initials, monthKey, monthName, startOf, timeFmt, shortDate, pctW, RangeKey } from '../utils';
 
@@ -15,23 +16,33 @@ export function Home() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { expenses, categories, filter, setFilter, theme, budget, beginEditExpense, profileName } = useStore();
+  const { expenses, categories, filter, setFilter, theme, budget, settings, beginEditExpense, profileName } = useStore();
   const displayName = profileName.trim() || 'there';
 
   const openThemeSheet = () => navigation.navigate('ThemeSheet');
+  const openHistory = () => navigation.navigate('MonthHistory');
   const editExpense = (id: string) => { beginEditExpense(id); navigation.navigate('AddExpense'); };
 
-  const { monthExp, spent } = useMemo(() => {
+  const monthExp = useMemo(() => {
     const tm = monthKey(new Date().toISOString());
-    const me = expenses.filter((e) => monthKey(e.date) === tm);
-    return { monthExp: me, spent: me.reduce((s, e) => s + e.amount, 0) };
+    return expenses.filter((e) => monthKey(e.date) === tm);
   }, [expenses]);
 
-  const left = Math.max(0, budget - spent);
-  const pct = Math.min(1, spent / budget);
-  const needs = monthExp.filter((e) => e.wn === 'NEED').reduce((s, e) => s + e.amount, 0);
-  const wants = monthExp.filter((e) => e.wn === 'WANT').reduce((s, e) => s + e.amount, 0);
-  const nw = needs + wants || 1;
+  // Spend split — one entry per classification, sharing colors with the badges below.
+  const sumOf = (k: Classification) => monthExp.filter((e) => e.wn === k).reduce((s, e) => s + e.amount, 0);
+  const needs = sumOf('NEED');
+  const invested = sumOf('INVEST');
+  const splitColors: Record<Classification, string> = { NEED: t.accent, WANT: t.pop, INVEST: INVEST_COLOR };
+  const split = CLASSIFICATIONS.map((c) => ({ label: c.group, amount: sumOf(c.key), color: splitColors[c.key] }));
+  const nw = split.reduce((s, x) => s + x.amount, 0) || 1;
+
+  // The hero tracks the budget, so it shows budget-relevant spend — which excludes
+  // investments when the user keeps them separate. The split card above stays on the
+  // true month totals either way.
+  const investSeparate = !settings.investInBudget && invested > 0;
+  const budgetSpent = budgetSpend(monthExp, settings.investInBudget);
+  const left = Math.max(0, budget - budgetSpent);
+  const pct = Math.min(1, budgetSpent / budget);
 
   let toneColor = '#14B870';
   let toneLabel = 'On track';
@@ -70,11 +81,11 @@ export function Home() {
     return { groups: grp, filteredCount: filtered.length };
   }, [expenses, filter]);
 
-  const wnBg = (wn: string) => (wn === 'NEED' ? hexA(t.accent, 0.14) : hexA(t.pop, 0.18));
-  const wnFg = (wn: string) => (wn === 'NEED' ? t.accent : theme === 'midnight' ? '#FFE900' : '#9A6B00');
+  const wnBg = (wn: string) => (wn === 'NEED' ? hexA(t.accent, 0.14) : wn === 'INVEST' ? hexA(INVEST_COLOR, 0.16) : hexA(t.pop, 0.18));
+  const wnFg = (wn: string) => (wn === 'NEED' ? t.accent : wn === 'INVEST' ? INVEST_COLOR : theme === 'midnight' ? '#FFE900' : '#9A6B00');
 
   const ranges: [RangeKey, string][] = [['today', 'Today'], ['week', 'Week'], ['month', 'Month'], ['all', 'All']];
-  const wnChips: [string, string][] = [['all', 'All'], ['NEED', 'Needs'], ['WANT', 'Wants']];
+  const wnChips: ['all' | Classification, string][] = [['all', 'All'], ...CLASSIFICATIONS.map((c) => [c.key, c.group] as [Classification, string])];
 
   return (
     <View style={{ flex: 1 }}>
@@ -90,6 +101,9 @@ export function Home() {
           </View>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Press onPress={openHistory} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="cal" size={17} color={t.accent} />
+          </Press>
           <Press onPress={openThemeSheet} style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="palette" size={17} color={t.accent} />
           </Press>
@@ -107,7 +121,7 @@ export function Home() {
           <AppText style={{ fontSize: 11.5, fontWeight: '700', letterSpacing: 1, color: t.heroText }}>SPENT IN {monthName(new Date()).toUpperCase()}</AppText>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 7 }}>
             <AppText style={{ fontSize: 21, fontWeight: '700', color: t.heroNum, opacity: 0.9, marginBottom: 4 }}>₹</AppText>
-            <AppText style={{ fontSize: 42, fontWeight: '800', color: t.heroNum, lineHeight: 44 }}>{inr(spent)}</AppText>
+            <AppText style={{ fontSize: 42, fontWeight: '800', color: t.heroNum, lineHeight: 44 }}>{inr(budgetSpent)}</AppText>
           </View>
           <View style={{ marginTop: 16, height: 8, borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' }}>
             <View style={{ height: '100%', borderRadius: 99, backgroundColor: 'rgba(255,255,255,0.92)', width: pctW(pct * 100) }} />
@@ -121,27 +135,29 @@ export function Home() {
               <AppText style={{ fontSize: 12, fontWeight: '700', color: toneColor }}>{toneLabel}</AppText>
             </View>
           </View>
+          {investSeparate && (
+            <AppText style={{ fontSize: 11.5, color: t.heroText, marginTop: 9 }}>+ ₹{inr(invested)} invested, kept out of the budget</AppText>
+          )}
         </View>
 
-        {/* Needs vs Wants */}
+        {/* Needs / Wants / Invest split */}
         <View style={{ marginTop: 14, borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 15, paddingHorizontal: 17 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-            <AppText style={{ fontSize: 13, fontWeight: '700', color: t.text }}>Needs vs Wants</AppText>
+            <AppText style={{ fontSize: 13, fontWeight: '700', color: t.text }}>Spend split</AppText>
             <AppText style={{ fontSize: 11.5, color: t.faint, fontWeight: '600' }}>{((needs / nw) * 100).toFixed(0)}% essential</AppText>
           </View>
           <View style={{ flexDirection: 'row', height: 9, borderRadius: 99, overflow: 'hidden', backgroundColor: t.card2 }}>
-            <View style={{ width: pctW((needs / nw) * 100), backgroundColor: t.accent }} />
-            <View style={{ width: pctW((wants / nw) * 100), backgroundColor: t.pop }} />
+            {split.map((s) => (
+              <View key={s.label} style={{ width: pctW((s.amount / nw) * 100), backgroundColor: s.color }} />
+            ))}
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.accent, marginRight: 6 }} />
-              <AppText style={{ fontSize: 12, color: t.sub }}>Needs ₹{inr(needs)}</AppText>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.pop, marginRight: 6 }} />
-              <AppText style={{ fontSize: 12, color: t.sub }}>Wants ₹{inr(wants)}</AppText>
-            </View>
+            {split.map((s) => (
+              <View key={s.label} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: s.color, marginRight: 6 }} />
+                <AppText style={{ fontSize: 12, color: t.sub }}>{s.label} ₹{inr(s.amount)}</AppText>
+              </View>
+            ))}
           </View>
         </View>
 
@@ -193,7 +209,7 @@ export function Home() {
           {wnChips.map(([k, label]) => {
             const active = filter.wn === k;
             return (
-              <Press key={k} onPress={() => setFilter({ wn: k as 'all' | 'NEED' | 'WANT' })} style={{ flex: 1, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accentSoft : t.card, borderWidth: 1.5, borderColor: active ? t.accent : t.line }}>
+              <Press key={k} onPress={() => setFilter({ wn: k })} style={{ flex: 1, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accentSoft : t.card, borderWidth: 1.5, borderColor: active ? t.accent : t.line }}>
                 <AppText style={{ fontSize: 13, fontWeight: '700', color: active ? t.accent : t.sub }}>{label}</AppText>
               </Press>
             );
@@ -222,7 +238,7 @@ export function Home() {
                           <AppText style={{ fontSize: 12, color: t.faint }}>{c.name}</AppText>
                           <View style={{ width: 3, height: 3, borderRadius: 2, backgroundColor: t.faint }} />
                           <View style={{ paddingVertical: 1, paddingHorizontal: 7, borderRadius: 99, backgroundColor: wnBg(e.wn) }}>
-                            <AppText style={{ fontSize: 11, fontWeight: '700', color: wnFg(e.wn) }}>{e.wn === 'NEED' ? 'Need' : 'Want'}</AppText>
+                            <AppText style={{ fontSize: 11, fontWeight: '700', color: wnFg(e.wn) }}>{wnLabel(e.wn)}</AppText>
                           </View>
                         </View>
                       </View>

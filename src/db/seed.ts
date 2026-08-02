@@ -1,12 +1,13 @@
 import type { DB } from './database';
 import { CATS, CAT_BUDGETS, DEFAULT_BUDGET } from '../data';
+import { EXPENSES_REBUILD_V3 } from './schema';
 
 // Default preference values written on first launch.
 export const DEFAULT_PREFS: Record<string, unknown> = {
   theme: 'mint',
   budget: DEFAULT_BUDGET,
   filter: { range: 'month', cat: 'all', wn: 'all', q: '' },
-  settings: { budgetAlerts: true, weeklySummary: true, recurringReminders: true, biometric: false },
+  settings: { budgetAlerts: true, weeklySummary: true, recurringReminders: true, biometric: false, investInBudget: true },
   savedInsights: { i1: true },
   onboarded: false,
   profile: { name: '' },
@@ -85,4 +86,19 @@ export async function ensurePaymentSchema(db: DB): Promise<void> {
   if (!cols.some((c) => c.name === 'account_id')) {
     await db.execAsync('ALTER TABLE expenses ADD COLUMN account_id TEXT;');
   }
+}
+
+// Idempotent safety net for the three-way spend classification. The original CHECK
+// constraint only allowed WANT/NEED, so an install whose v3 migration didn't land would
+// reject every investment expense at insert time. Cheap — one sqlite_master read.
+// Must run after ensurePaymentSchema(), since the rebuild copies account_id across.
+export async function ensureClassificationSchema(db: DB): Promise<void> {
+  const row = await db.getFirstAsync<{ sql: string | null }>(
+    `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'expenses'`,
+  );
+  if (!row?.sql || row.sql.includes('INVEST')) return;
+
+  await db.withTransactionAsync(async () => {
+    for (const sql of EXPENSES_REBUILD_V3) await db.execAsync(sql);
+  });
 }

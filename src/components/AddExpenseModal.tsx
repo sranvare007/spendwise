@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, inr, tint } from '../theme';
 import { Icon } from '../icons';
 import { Press } from './Press';
-import { useStore, paymentTypeMeta } from '../store';
+import { useStore, paymentTypeMeta, CLASSIFICATIONS } from '../store';
 import { RootStackParamList } from '../navigation';
 import { monthName, shortDate } from '../utils';
 
@@ -106,22 +106,25 @@ export function AddExpenseModal() {
             </View>
           </View>
 
-          {/* Want/Need + Today */}
-          <View style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 10, marginBottom: 18 }}>
+          {/* Need / Want / Invest + date. The three-way segment takes the full row, so the
+              date chip sits on its own line below it. */}
+          <View style={{ marginTop: 10, marginBottom: 18, gap: 10 }}>
             <View style={{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 12, backgroundColor: t.card2 }}>
-              {(['NEED', 'WANT'] as const).map((k) => {
-                const active = draft.wn === k;
+              {CLASSIFICATIONS.map((c) => {
+                const active = draft.wn === c.key;
                 return (
-                  <Press key={k} onPress={() => setDraft({ wn: k })} style={{ minWidth: 62, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accent : 'transparent' }}>
-                    <AppText style={{ fontSize: 12.5, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{k === 'NEED' ? 'Need' : 'Want'}</AppText>
+                  <Press key={c.key} onPress={() => setDraft({ wn: c.key })} style={{ flex: 1, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accent : 'transparent' }}>
+                    <AppText style={{ fontSize: 12.5, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{c.label}</AppText>
                   </Press>
                 );
               })}
             </View>
-            <Press onPress={() => setShowCal((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 13, borderRadius: 12, backgroundColor: showCal ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: showCal ? t.accent : 'transparent' }}>
-              <Icon name="cal" size={15} color={showCal ? t.accent : t.sub} />
-              <AppText style={{ fontSize: 13, fontWeight: '700', color: showCal ? t.accent : t.sub }}>{dateLabel}</AppText>
-            </Press>
+            <View style={{ alignItems: 'center' }}>
+              <Press onPress={() => setShowCal((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 13, borderRadius: 12, backgroundColor: showCal ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: showCal ? t.accent : 'transparent' }}>
+                <Icon name="cal" size={15} color={showCal ? t.accent : t.sub} />
+                <AppText style={{ fontSize: 13, fontWeight: '700', color: showCal ? t.accent : t.sub }}>{dateLabel}</AppText>
+              </Press>
+            </View>
           </View>
 
           {/* Calendar */}
@@ -207,13 +210,13 @@ export function AddExpenseModal() {
                   </Press>
                 );
               })}
-              <Press onPress={() => navigation.navigate('PaymentSources')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 13, borderRadius: 14, backgroundColor: t.card2, borderWidth: 1.5, borderColor: 'transparent' }}>
+              <Press onPress={() => navigation.navigate('AddPaymentSource')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 13, borderRadius: 14, backgroundColor: t.card2, borderWidth: 1.5, borderColor: 'transparent' }}>
                 <Icon name="plus" size={15} color={t.accent} strokeWidth={2.6} />
                 <AppText style={{ fontSize: 13, fontWeight: '700', color: t.accent }}>New</AppText>
               </Press>
             </ScrollView>
           ) : (
-            <Press onPress={() => navigation.navigate('PaymentSources')} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 14, backgroundColor: t.card2, marginBottom: 16 }}>
+            <Press onPress={() => navigation.navigate('AddPaymentSource')} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 14, backgroundColor: t.card2, marginBottom: 16 }}>
               <Icon name="plus" size={16} color={t.accent} strokeWidth={2.6} />
               <AppText style={{ flex: 1, fontSize: 13, fontWeight: '700', color: t.sub }}>Add a payment source</AppText>
               <Icon name="chevR" size={15} color={t.faint} strokeWidth={2.4} />

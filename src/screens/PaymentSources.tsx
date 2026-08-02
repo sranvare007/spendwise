@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
 import { View, ScrollView, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppText } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, tint } from '../theme';
 import { Icon } from '../icons';
 import { Press } from '../components/Press';
 import { useStore, PAYMENT_TYPES, paymentTypeMeta, CATEGORY_COLORS, PaymentType } from '../store';
+import { RootStackParamList } from '../navigation';
 
-// Settings → Payment sources. Lists the user's payment sources with delete, plus an
-// inline form to create new ones. Reached from the Settings "Payment sources" row.
+// Settings → Payment sources. Lists the user's payment sources with delete. Adding a new
+// source is done via the FAB, which opens the AddPaymentSource modal. Reached from the
+// Settings "Payment sources" row.
 export function PaymentSources() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
-  const { accounts, addPaymentSource, deletePaymentSource } = useStore();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { accounts, deletePaymentSource } = useStore();
+  const fabBottom = Math.max(insets.bottom, 16) + 16;
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
@@ -25,17 +29,17 @@ export function PaymentSources() {
         <AppText style={{ fontSize: 21, fontWeight: '800', color: t.text }}>Payment sources</AppText>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 40 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: fabBottom + 80 }}>
         <AppText style={{ fontSize: 13, color: t.sub, marginBottom: 14, lineHeight: 19.5 }}>The cards, accounts and wallets you pay through. Pick one when logging an expense.</AppText>
 
         {accounts.length === 0 ? (
-          <View style={{ borderRadius: 16, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 26, paddingHorizontal: 16, alignItems: 'center', marginBottom: 24 }}>
+          <View style={{ borderRadius: 16, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, paddingVertical: 26, paddingHorizontal: 16, alignItems: 'center' }}>
             <Icon name="card" size={26} color={t.faint} />
             <AppText style={{ fontSize: 13.5, fontWeight: '700', color: t.sub, marginTop: 10 }}>No payment sources yet</AppText>
-            <AppText style={{ fontSize: 12.5, color: t.faint, marginTop: 4, textAlign: 'center' }}>Add one below to start tracking how you pay.</AppText>
+            <AppText style={{ fontSize: 12.5, color: t.faint, marginTop: 4, textAlign: 'center' }}>Tap the + button to add one.</AppText>
           </View>
         ) : (
-          <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden', marginBottom: 24 }}>
+          <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden' }}>
             {accounts.map((s, i) => {
               const meta = paymentTypeMeta(s.type);
               return (
@@ -55,12 +59,15 @@ export function PaymentSources() {
             })}
           </View>
         )}
-
-        <AppText style={{ fontSize: 12, fontWeight: '700', color: t.faint, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 10, marginLeft: 4 }}>Add payment source</AppText>
-        <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, padding: 16 }}>
-          <PaymentForm onAdd={(input) => addPaymentSource(input)} />
-        </View>
       </ScrollView>
+
+      {/* FAB — opens the add-source modal */}
+      <Press
+        onPress={() => navigation.navigate('AddPaymentSource')}
+        style={{ position: 'absolute', right: 20, bottom: fabBottom, width: 60, height: 60, borderRadius: 20, backgroundColor: t.fab, alignItems: 'center', justifyContent: 'center', shadowColor: t.fab, shadowOpacity: 0.45, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}
+      >
+        <Icon name="plus" size={28} color={t.fabIcon} strokeWidth={2.6} />
+      </Press>
     </View>
   );
 }

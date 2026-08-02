@@ -3,7 +3,7 @@ import { Share, AppState } from 'react-native';
 import { ThemeKey } from './theme';
 import { getBiometricCapability, runAuth, AuthOutcome } from './biometric';
 import { monthKey } from './utils';
-import { Expense, Recurring, Draft, Category, PaymentSource, PaymentType, DEFAULT_BUDGET, catById, CATS, setCategoryRegistry } from './data';
+import { Expense, Recurring, Draft, Category, Classification, PaymentSource, PaymentType, DEFAULT_BUDGET, catById, CATS, setCategoryRegistry, wnLabel, budgetSpend } from './data';
 import { IconName } from './icons';
 import { getDatabase } from './db/database';
 import {
@@ -13,8 +13,8 @@ import {
 } from './db/repositories';
 
 // Re-export shared data so existing screen imports keep working.
-export { CATS, CAT_BUDGETS, CATEGORY_COLORS, catById, DEFAULT_BUDGET, PAYMENT_TYPES, paymentTypeMeta } from './data';
-export type { Category, Expense, Recurring, Draft, PaymentSource, PaymentType } from './data';
+export { CATS, CAT_BUDGETS, CATEGORY_COLORS, catById, DEFAULT_BUDGET, PAYMENT_TYPES, paymentTypeMeta, CLASSIFICATIONS, INVEST_COLOR, wnLabel, budgetSpend } from './data';
+export type { Category, Expense, Recurring, Draft, Classification, PaymentSource, PaymentType } from './data';
 
 export interface NewCategoryInput { name: string; icon: IconName; color: string; }
 export interface NewRecurringInput { name: string; cat: string; amount: number; freq: string; due: number; }
@@ -26,16 +26,18 @@ export interface Settings {
   weeklySummary: boolean;
   recurringReminders: boolean;
   biometric: boolean;
+  // Whether INVEST expenses count against the monthly budget, or are tracked beside it.
+  investInBudget: boolean;
 }
 
 export type RangeKey = 'today' | 'week' | 'month' | 'all';
 export type Period = 'week' | 'month' | '6m';
-export interface Filter { range: RangeKey; cat: string; wn: 'all' | 'NEED' | 'WANT'; q: string; }
+export interface Filter { range: RangeKey; cat: string; wn: 'all' | Classification; q: string; }
 export interface Toast { msg: string; tone: 'good' | 'warn' | 'bad'; }
 
 // Fresh draft for a new entry — date defaults to "now" so an untouched draft logs today.
 const freshDraft = (): Draft => ({ amount: '', desc: '', cat: null, wn: 'NEED', date: new Date().toISOString(), account: null });
-const DEFAULT_SETTINGS: Settings = { budgetAlerts: true, weeklySummary: true, recurringReminders: true, biometric: false };
+const DEFAULT_SETTINGS: Settings = { budgetAlerts: true, weeklySummary: true, recurringReminders: true, biometric: false, investInBudget: true };
 const DEFAULT_FILTER: Filter = { range: 'month', cat: 'all', wn: 'all', q: '' };
 
 // Fire-and-forget DB write; failures never block the UI.
@@ -227,7 +229,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     writeDb((db) => insertExpense(db, { ...exp, currency: 'INR' }));
 
     const tm = monthKey(new Date().toISOString());
-    const spent = next.filter((e) => monthKey(e.date) === tm).reduce((s, e) => s + e.amount, 0);
+    const spent = budgetSpend(next.filter((e) => monthKey(e.date) === tm), settings.investInBudget);
     const pct = spent / budget;
     if (pct < 0.75) {
       setConfettiKey((k) => k + 1);
@@ -238,7 +240,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       showToast('Logged. You are over your monthly budget.', 'bad');
     }
     return true;
-  }, [draft, expenses, budget, showToast, editingId]);
+  }, [draft, expenses, budget, showToast, editingId, settings.investInBudget]);
 
   // Prime the draft for a brand-new entry; the caller then navigates to the modal.
   const beginNewExpense = useCallback(() => {
@@ -408,12 +410,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const exportCsv = useCallback(() => {
-    const rows = [['Date', 'Time', 'Description', 'Category', 'Amount', 'Currency', 'Want/Need', 'Recurring']];
+    const rows = [['Date', 'Time', 'Description', 'Category', 'Amount', 'Currency', 'Classification', 'Recurring']];
     expenses.forEach((e) => {
       const d = new Date(e.date);
       rows.push([
         d.toLocaleDateString(), d.toLocaleTimeString(), '"' + e.desc.replace(/"/g, '""') + '"',
-        catById(e.cat).name, String(e.amount), 'INR', e.wn === 'NEED' ? 'Need' : 'Want', 'N',
+        catById(e.cat).name, String(e.amount), 'INR', wnLabel(e.wn), 'N',
       ]);
     });
     const csv = rows.map((r) => r.join(',')).join('\n');

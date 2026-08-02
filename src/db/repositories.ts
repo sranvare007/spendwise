@@ -1,5 +1,5 @@
 import type { DB } from './database';
-import { Expense, Recurring, Category, PaymentSource } from '../data';
+import { Expense, Recurring, Category, PaymentSource, Classification } from '../data';
 
 // ---- Row shapes returned by SQLite ----
 interface ExpenseRow {
@@ -7,7 +7,7 @@ interface ExpenseRow {
   amount: number;
   description: string;
   category_id: string;
-  classification: 'NEED' | 'WANT';
+  classification: Classification;
   date: string;
   account_id: string | null;
 }
@@ -41,7 +41,7 @@ export interface NewExpense {
   amount: number;
   desc: string;
   cat: string;
-  wn: 'NEED' | 'WANT';
+  wn: Classification;
   date: string;
   currency?: string;
   notes?: string | null;

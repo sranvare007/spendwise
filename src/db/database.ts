@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { SCHEMA_VERSION, MIGRATIONS } from './schema';
-import { seedIfEmpty, ensureDefaultCategories, ensurePaymentSchema } from './seed';
+import { seedIfEmpty, ensureDefaultCategories, ensurePaymentSchema, ensureClassificationSchema } from './seed';
 
 export type DB = SQLite.SQLiteDatabase;
 
@@ -15,7 +15,11 @@ export function getDatabase(): Promise<DB> {
 
 async function init(): Promise<DB> {
   const db = await SQLite.openDatabaseAsync(DB_NAME);
-  await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+  // Foreign keys stay off through migration/seed: the v3 rebuild drops and renames the
+  // expenses table, which would otherwise cascade-delete its receipt_images. Turned on
+  // once the schema is settled. (The pragma is a no-op inside a transaction, so it has
+  // to be set out here rather than within a migration.)
+  await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = OFF;');
 
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const current = row?.user_version ?? 0;
@@ -32,7 +36,9 @@ async function init(): Promise<DB> {
   }
 
   await ensurePaymentSchema(db);
+  await ensureClassificationSchema(db);
   await seedIfEmpty(db);
   await ensureDefaultCategories(db);
+  await db.execAsync('PRAGMA foreign_keys = ON;');
   return db;
 }
