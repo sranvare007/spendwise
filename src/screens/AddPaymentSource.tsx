@@ -32,7 +32,8 @@ export function AddPaymentSource() {
         <Pressable style={{ flex: 1 }} onPress={close} />
       </Animated.View>
 
-      <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '92%', backgroundColor: t.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, transform: [{ translateY }] }}>
+      {/* Safe-area inset lives on the sheet, not the scroll content — see AddExpenseModal. */}
+      <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '92%', paddingBottom: insets.bottom, backgroundColor: t.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, transform: [{ translateY }] }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 10 }}>
           <View style={{ width: 36 }} />
@@ -45,7 +46,7 @@ export function AddPaymentSource() {
           </Press>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: insets.bottom + 24 }}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 }}>
           <PaymentForm onAdd={(input) => { addPaymentSource(input); close(); }} />
         </ScrollView>
       </Animated.View>

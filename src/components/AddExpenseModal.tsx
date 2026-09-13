@@ -9,7 +9,7 @@ import { Icon } from '../icons';
 import { Press } from './Press';
 import { useStore, paymentTypeMeta, CLASSIFICATIONS } from '../store';
 import { RootStackParamList } from '../navigation';
-import { monthName, shortDate } from '../utils';
+import { monthName, chipDate } from '../utils';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -22,6 +22,7 @@ function fmtAmount(str: string): string {
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
 const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const MAX_SPLIT_MONTHS = 24;
 
 const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
 const sameDay = (a: Date, b: Date) => startOfDay(a) === startOfDay(b);
@@ -64,7 +65,7 @@ export function AddExpenseModal() {
   const selDate = new Date(draft.date);
   const [showCal, setShowCal] = useState(false);
   const [viewMonth, setViewMonth] = useState(() => new Date(selDate.getFullYear(), selDate.getMonth(), 1));
-  const dateLabel = sameDay(selDate, today) ? 'Today' : shortDate(selDate);
+  const dateLabel = sameDay(selDate, today) ? 'Today' : chipDate(selDate);
 
   // Apply the chosen day while keeping the existing time-of-day; future days are blocked.
   const pickDay = (day: Date) => {
@@ -78,13 +79,27 @@ export function AddExpenseModal() {
   // Don't let the user page into months that are entirely in the future.
   const atCurrentMonth = viewMonth.getFullYear() === today.getFullYear() && viewMonth.getMonth() === today.getMonth();
 
+  // ---- split over months ----
+  const months = draft.splitMonths;
+  const splitOn = months > 1;
+  const stepMonths = (delta: number) => setDraft({ splitMonths: Math.min(MAX_SPLIT_MONTHS, Math.max(1, months + delta)) });
+  const endMonth = new Date(selDate.getFullYear(), selDate.getMonth() + months - 1, 1);
+  const monthRange = `${monthName(selDate).slice(0, 3)} – ${monthName(endMonth).slice(0, 3)}${endMonth.getFullYear() !== selDate.getFullYear() ? ' ' + endMonth.getFullYear() : ''}`;
+  const splitHint = !splitOn
+    ? 'Spread the cost across coming months'
+    : amt > 0 ? `₹${inr(amt / months)}/mo · ${monthRange}` : monthRange;
+
   return (
     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}>
       <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(8,16,24,0.5)', opacity: slide }}>
         <Pressable style={{ flex: 1 }} onPress={closeModal} />
       </Animated.View>
 
-      <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '92%', backgroundColor: t.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, transform: [{ translateY }] }}>
+      {/* The sheet reaches the physical screen bottom, so the safe-area inset is reserved
+          here rather than inside the ScrollView: padding on the scroll content only clears
+          the system nav bar once scrolled to the very end, leaving the Save button jammed
+          against the nav buttons at rest. */}
+      <Animated.View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '92%', paddingBottom: insets.bottom, backgroundColor: t.card, borderTopLeftRadius: 28, borderTopRightRadius: 28, transform: [{ translateY }] }}>
         {/* Header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 10 }}>
           <View style={{ width: 36 }} />
@@ -97,7 +112,7 @@ export function AddExpenseModal() {
           </Press>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 24 }}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}>
           {/* Amount */}
           <View style={{ alignItems: 'center', paddingTop: 14, paddingBottom: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
@@ -106,25 +121,24 @@ export function AddExpenseModal() {
             </View>
           </View>
 
-          {/* Need / Want / Invest + date. The three-way segment takes the full row, so the
-              date chip sits on its own line below it. */}
-          <View style={{ marginTop: 10, marginBottom: 18, gap: 10 }}>
-            <View style={{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 12, backgroundColor: t.card2 }}>
+          {/* Need / Want / Invest + date, sharing one row: the segment flexes into whatever
+              the date chip leaves, and the chip keeps its label short so three segments still
+              have room on narrow screens. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, marginBottom: 18 }}>
+            <View style={{ flex: 1, flexDirection: 'row', gap: 4, padding: 4, borderRadius: 12, backgroundColor: t.card2 }}>
               {CLASSIFICATIONS.map((c) => {
                 const active = draft.wn === c.key;
                 return (
                   <Press key={c.key} onPress={() => setDraft({ wn: c.key })} style={{ flex: 1, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? t.accent : 'transparent' }}>
-                    <AppText style={{ fontSize: 12.5, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{c.label}</AppText>
+                    <AppText numberOfLines={1} style={{ fontSize: 12.5, fontWeight: '700', color: active ? t.onAccent : t.sub }}>{c.label}</AppText>
                   </Press>
                 );
               })}
             </View>
-            <View style={{ alignItems: 'center' }}>
-              <Press onPress={() => setShowCal((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 13, borderRadius: 12, backgroundColor: showCal ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: showCal ? t.accent : 'transparent' }}>
-                <Icon name="cal" size={15} color={showCal ? t.accent : t.sub} />
-                <AppText style={{ fontSize: 13, fontWeight: '700', color: showCal ? t.accent : t.sub }}>{dateLabel}</AppText>
-              </Press>
-            </View>
+            <Press onPress={() => setShowCal((v) => !v)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 42, paddingHorizontal: 12, borderRadius: 12, backgroundColor: showCal ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: showCal ? t.accent : 'transparent' }}>
+              <Icon name="cal" size={15} color={showCal ? t.accent : t.sub} />
+              <AppText numberOfLines={1} style={{ fontSize: 12.5, fontWeight: '700', color: showCal ? t.accent : t.sub }}>{dateLabel}</AppText>
+            </Press>
           </View>
 
           {/* Calendar */}
@@ -223,6 +237,24 @@ export function AddExpenseModal() {
             </Press>
           )}
 
+          {/* Split over months — new entries only; an existing installment is edited on its own. */}
+          {!isEditing && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, paddingLeft: 14, paddingRight: 9, borderRadius: 14, marginBottom: 16, backgroundColor: splitOn ? t.accentSoft : t.card2, borderWidth: 1.5, borderColor: splitOn ? t.accent : 'transparent' }}>
+              <Icon name="repeat" size={18} color={splitOn ? t.accent : t.sub} />
+              <View style={{ flex: 1 }}>
+                <AppText style={{ fontSize: 13.5, fontWeight: '700', color: splitOn ? t.accent : t.text }}>Split over months</AppText>
+                <AppText numberOfLines={1} style={{ fontSize: 11.5, fontWeight: '600', color: t.faint, marginTop: 2 }}>{splitHint}</AppText>
+              </View>
+              <Press onPress={() => stepMonths(-1)} disabled={months <= 1} style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center', opacity: months <= 1 ? 0.35 : 1 }}>
+                <Icon name="minus" size={15} color={t.sub} strokeWidth={2.4} />
+              </Press>
+              <AppText style={{ minWidth: 24, textAlign: 'center', fontSize: 15, fontWeight: '800', color: splitOn ? t.accent : t.text }}>{months}</AppText>
+              <Press onPress={() => stepMonths(1)} disabled={months >= MAX_SPLIT_MONTHS} style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center', opacity: months >= MAX_SPLIT_MONTHS ? 0.35 : 1 }}>
+                <Icon name="plus" size={15} color={t.accent} strokeWidth={2.4} />
+              </Press>
+            </View>
+          )}
+
           {/* Keypad */}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4.5 }}>
             {KEYS.map((k) => (
@@ -245,7 +277,7 @@ export function AddExpenseModal() {
             <AppText style={{ fontSize: 16, fontWeight: '800', color: canSave ? t.onAccent : t.faint }}>
               {isEditing
                 ? (canSave ? 'Save changes' : 'Enter amount & details')
-                : (canSave ? 'Add ₹' + fmtAmount(draft.amount) : 'Enter amount & details')}
+                : (canSave ? (splitOn ? `Add ₹${fmtAmount(draft.amount)} over ${months} months` : 'Add ₹' + fmtAmount(draft.amount)) : 'Enter amount & details')}
             </AppText>
           </Press>
 

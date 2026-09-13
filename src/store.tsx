@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Share, AppState } from 'react-native';
 import { ThemeKey } from './theme';
 import { getBiometricCapability, runAuth, AuthOutcome } from './biometric';
-import { monthKey } from './utils';
+import { monthKey, dayKey, splitInstallments } from './utils';
 import { Expense, Recurring, Draft, Category, Classification, PaymentSource, PaymentType, DEFAULT_BUDGET, catById, CATS, setCategoryRegistry, wnLabel, budgetSpend } from './data';
 import { IconName } from './icons';
 import { getDatabase } from './db/database';
@@ -36,7 +36,7 @@ export interface Filter { range: RangeKey; cat: string; wn: 'all' | Classificati
 export interface Toast { msg: string; tone: 'good' | 'warn' | 'bad'; }
 
 // Fresh draft for a new entry — date defaults to "now" so an untouched draft logs today.
-const freshDraft = (): Draft => ({ amount: '', desc: '', cat: null, wn: 'NEED', date: new Date().toISOString(), account: null });
+const freshDraft = (): Draft => ({ amount: '', desc: '', cat: null, wn: 'NEED', date: new Date().toISOString(), account: null, splitMonths: 1 });
 const DEFAULT_SETTINGS: Settings = { budgetAlerts: true, weeklySummary: true, recurringReminders: true, biometric: false, investInBudget: true };
 const DEFAULT_FILTER: Filter = { range: 'month', cat: 'all', wn: 'all', q: '' };
 
@@ -102,7 +102,12 @@ export const useStore = () => {
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [allExpenses, setExpenses] = useState<Expense[]>([]);
+  // Split installments are stored up front with future dates; screens only see rows dated
+  // today or earlier, so each installment shows up when its month arrives. The cutoff is
+  // refreshed on foreground so an app left open across midnight picks up new ones.
+  const [todayKey, setTodayKey] = useState(() => dayKey(new Date().toISOString()));
+  const expenses = useMemo(() => allExpenses.filter((e) => dayKey(e.date) <= todayKey), [allExpenses, todayKey]);
   const [categories, setCategories] = useState<Category[]>(CATS);
   const [accounts, setAccounts] = useState<PaymentSource[]>([]);
   const [filter, setFilterState] = useState<Filter>(DEFAULT_FILTER);
@@ -161,6 +166,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
       if (next === 'background' && biometricRef.current) setLocked(true);
+      if (next === 'active') setTodayKey(dayKey(new Date().toISOString()));
     });
     return () => sub.remove();
   }, []);
@@ -212,7 +218,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     // Edit path: keep id and original date, update the rest in place.
     if (editingId) {
-      const orig = expenses.find((e) => e.id === editingId);
+      const orig = allExpenses.find((e) => e.id === editingId);
       if (!orig) return true;
       const updated: Expense = { ...orig, amount: amt, desc: draft.desc.trim(), cat: draft.cat, wn: draft.wn, date: draft.date, account: draft.account };
       setExpenses((arr) => arr.map((e) => (e.id === editingId ? updated : e)));
@@ -221,26 +227,36 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return true;
     }
 
-    const exp: Expense = {
-      id: 'u' + Date.now(), amount: amt, desc: draft.desc.trim(), cat: draft.cat, wn: draft.wn, date: draft.date, account: draft.account,
-    };
-    const next = [exp, ...expenses];
+    // New entry: one row per month. A split writes independent installments tagged "(i/N)",
+    // so each can later be edited or deleted on its own.
+    const desc = draft.desc.trim();
+    const cat = draft.cat;
+    const months = Math.max(1, Math.floor(draft.splitMonths));
+    const stamp = Date.now();
+    const created: Expense[] = splitInstallments(amt, months, draft.date).map((p, i) => ({
+      id: months > 1 ? `u${stamp}-${i + 1}` : 'u' + stamp,
+      amount: p.amount,
+      desc: months > 1 ? `${desc} (${i + 1}/${months})` : desc,
+      cat, wn: draft.wn, date: p.date, account: draft.account,
+    }));
+    const next = [...created, ...allExpenses];
     setExpenses(next);
-    writeDb((db) => insertExpense(db, { ...exp, currency: 'INR' }));
+    writeDb(async (db) => { for (const e of created) await insertExpense(db, { ...e, currency: 'INR' }); });
 
     const tm = monthKey(new Date().toISOString());
     const spent = budgetSpend(next.filter((e) => monthKey(e.date) === tm), settings.investInBudget);
     const pct = spent / budget;
+    const lead = months > 1 ? `Split over ${months} months` : 'Logged';
     if (pct < 0.75) {
       setConfettiKey((k) => k + 1);
-      showToast('Logged! Still on track — nice work.', 'good');
+      showToast(lead + '! Still on track — nice work.', 'good');
     } else if (pct < 0.95) {
-      showToast('Logged. Heads up — ' + Math.round(pct * 100) + '% of budget used.', 'warn');
+      showToast(lead + '. Heads up — ' + Math.round(pct * 100) + '% of budget used.', 'warn');
     } else {
-      showToast('Logged. You are over your monthly budget.', 'bad');
+      showToast(lead + '. You are over your monthly budget.', 'bad');
     }
     return true;
-  }, [draft, expenses, budget, showToast, editingId, settings.investInBudget]);
+  }, [draft, allExpenses, budget, showToast, editingId, settings.investInBudget]);
 
   // Prime the draft for a brand-new entry; the caller then navigates to the modal.
   const beginNewExpense = useCallback(() => {
@@ -250,11 +266,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Prime the draft from an existing expense for editing; the caller then navigates.
   const beginEditExpense = useCallback((id: string) => {
-    const e = expenses.find((x) => x.id === id);
+    const e = allExpenses.find((x) => x.id === id);
     if (!e) return;
-    setDraftState({ amount: String(e.amount), desc: e.desc, cat: e.cat, wn: e.wn, date: e.date, account: e.account ?? null });
+    setDraftState({ amount: String(e.amount), desc: e.desc, cat: e.cat, wn: e.wn, date: e.date, account: e.account ?? null, splitMonths: 1 });
     setEditingId(id);
-  }, [expenses]);
+  }, [allExpenses]);
 
   // Clear draft + edit target when the modal screen unmounts.
   const resetExpenseEntry = useCallback(() => {

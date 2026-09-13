@@ -34,6 +34,11 @@ export function shortDate(d: Date): string {
   return `${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
+// e.g. "9 Jun" — for chips, where the weekday of shortDate() does not fit.
+export function chipDate(d: Date): string {
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
 // e.g. "09/06/2026"
 export function numericDate(d: Date): string {
   const p = (n: number) => String(n).padStart(2, '0');
@@ -53,6 +58,23 @@ export function timeFmt(d: Date): string {
 export function monthKey(iso: string): string {
   const x = new Date(iso);
   return `${x.getFullYear()}-${x.getMonth()}`;
+}
+
+// Spreads one purchase over `months` monthly installments. The first keeps the original
+// date; each later one lands on the 1st of its month (same time of day) so it counts toward
+// that month from day one. Amounts are floored to paise and the rounding remainder goes to
+// the first installment, so the parts always add back up to the total.
+export function splitInstallments(total: number, months: number, iso: string): { amount: number; date: string }[] {
+  const n = Math.max(1, Math.floor(months));
+  const base = Math.floor((total / n) * 100) / 100;
+  const first = Math.round((total - base * (n - 1)) * 100) / 100;
+  const start = new Date(iso);
+  return Array.from({ length: n }, (_, i) => {
+    const d = i === 0
+      ? start
+      : new Date(start.getFullYear(), start.getMonth() + i, 1, start.getHours(), start.getMinutes(), start.getSeconds());
+    return { amount: i === 0 ? first : base, date: d.toISOString() };
+  });
 }
 
 export type RangeKey = 'today' | 'week' | 'month' | 'all';

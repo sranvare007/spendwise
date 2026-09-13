@@ -68,6 +68,7 @@ export interface Draft {
   wn: Classification;
   date: string; // ISO string of the expense date
   account: string | null; // selected payment source id, or null
+  splitMonths: number; // 1 = single expense; N > 1 = spread over N monthly installments (new entries only)
 }
 
 export const CATS: Category[] = [
