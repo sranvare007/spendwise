@@ -19,7 +19,7 @@ const RIGHT: TabMeta[] = [
 ];
 
 // Custom tab bar for the bottom-tab navigator. Preserves the pill tabs + floating
-// center FAB; the FAB opens the Add-Expense modal (a parent-stack route).
+// center FAB; the FAB opens the Add expense screen (a parent-stack route).
 export function BottomBar({ state, navigation }: BottomTabBarProps) {
   const t = useTheme();
   const insets = useSafeAreaInsets();

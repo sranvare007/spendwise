@@ -40,6 +40,7 @@ export interface Expense {
   wn: Classification;
   date: string;
   account?: string | null; // id of the payment source used, or null
+  receipt?: string | null; // file name of the receipt photo in the receipts directory, or null
 }
 
 // A payment source the user pays through (credit card, bank account, cash, etc.).
@@ -69,6 +70,7 @@ export interface Draft {
   date: string; // ISO string of the expense date
   account: string | null; // selected payment source id, or null
   splitMonths: number; // 1 = single expense; N > 1 = spread over N monthly installments (new entries only)
+  receipt: string | null; // saved receipt file name, or a just-picked image URI (see receipts.ts)
 }
 
 export const CATS: Category[] = [

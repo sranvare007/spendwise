@@ -10,16 +10,16 @@ import { Press } from '../components/Press';
 import { Toggle } from '../components/Toggle';
 import { useStore, Settings as SettingsType } from '../store';
 import { RootStackParamList } from '../navigation';
-import { initials } from '../utils';
+import { initials, chipDate } from '../utils';
 import { getBiometricCapability, BioCapability } from '../biometric';
 
-type SubRoute = 'Budgets' | 'Recurring' | 'Categories' | 'Export' | 'PaymentSources';
+type SubRoute = 'Budgets' | 'Recurring' | 'Categories' | 'Export' | 'PaymentSources' | 'Backup';
 
 export function Settings() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, expenses, categories, accounts, clearExpenses, profileName } = useStore();
+  const { theme, setTheme, budget, recurring, settings, toggleSetting, setBiometric, expenses, categories, accounts, clearExpenses, profileName, lastBackupAt } = useStore();
   const displayName = profileName.trim() || 'there';
 
   const confirmClear = () => {
@@ -56,7 +56,8 @@ export function Settings() {
     { icon: 'repeat', color: '#5B8DEF', label: 'Recurring expenses', detail: recurring.filter((r) => !r.paused).length + ' active', route: 'Recurring' },
     { icon: 'tag', color: '#C77DFF', label: 'Categories', detail: String(categories.length), route: 'Categories' },
     { icon: 'card', color: '#21C0CE', label: 'Payment sources', detail: String(accounts.length), route: 'PaymentSources' },
-    { icon: 'download', color: '#FFB23E', label: 'Export data', detail: 'CSV', route: 'Export' },
+    { icon: 'download', color: '#FFB23E', label: 'Export data', detail: 'Excel · CSV', route: 'Export' },
+    { icon: 'bookmark', color: '#4C9AFF', label: 'Backup & restore', detail: lastBackupAt ? chipDate(new Date(lastBackupAt)) : 'Never', route: 'Backup' },
   ];
 
   const toggleRows: { icon: IconName; color: string; label: string; key: keyof SettingsType }[] = [

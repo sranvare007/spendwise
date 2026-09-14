@@ -51,7 +51,16 @@
         {
           "faceIDPermission": "Allow SpendWise to use Face ID to unlock the app."
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow SpendWise to use the camera to photograph receipts.",
+          "photosPermission": "Allow SpendWise to attach receipt photos from your library.",
+          "microphonePermission": false
+        }
+      ],
+      "expo-sharing"
     ],
     "extra": {
       "eas": {

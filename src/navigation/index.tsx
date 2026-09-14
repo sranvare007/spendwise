@@ -9,7 +9,7 @@ import { Analytics } from '../screens/Analytics';
 import { Insights } from '../screens/Insights';
 import { Settings } from '../screens/Settings';
 import { SubScreen } from '../screens/SubScreen';
-import { AddExpenseModal } from '../components/AddExpenseModal';
+import { AddExpense } from '../screens/AddExpense';
 import { ThemeSheet } from '../components/ThemeSheet';
 import { LockScreen } from '../components/LockScreen';
 import { Onboarding } from '../screens/Onboarding';
@@ -17,6 +17,7 @@ import { EditProfile } from '../screens/EditProfile';
 import { PaymentSources } from '../screens/PaymentSources';
 import { AddPaymentSource } from '../screens/AddPaymentSource';
 import { MonthHistory } from '../screens/MonthHistory';
+import { Backup } from '../screens/Backup';
 import { BottomBar } from '../components/BottomBar';
 
 // Which variant of the shared SubScreen to render. Derived from the route name so the
@@ -39,8 +40,10 @@ export type RootStackParamList = {
   Export: undefined;
   EditProfile: undefined;
   PaymentSources: undefined;
-  AddPaymentSource: undefined;
+  // selectForExpense: opened from Add expense, so the new source is picked for the draft.
+  AddPaymentSource: { selectForExpense?: boolean } | undefined;
   MonthHistory: undefined;
+  Backup: undefined;
   AddExpense: undefined;
   ThemeSheet: undefined;
   Lock: undefined;
@@ -90,8 +93,9 @@ export function RootNavigator() {
           <Stack.Screen name="EditProfile" component={EditProfile} />
           <Stack.Screen name="PaymentSources" component={PaymentSources} />
           <Stack.Screen name="MonthHistory" component={MonthHistory} />
+          <Stack.Screen name="Backup" component={Backup} />
+          <Stack.Screen name="AddExpense" component={AddExpense} options={{ animation: 'slide_from_bottom' }} />
           <Stack.Group screenOptions={{ presentation: 'transparentModal', animation: 'fade' }}>
-            <Stack.Screen name="AddExpense" component={AddExpenseModal} />
             <Stack.Screen name="ThemeSheet" component={ThemeSheet} />
             <Stack.Screen name="AddPaymentSource" component={AddPaymentSource} />
           </Stack.Group>

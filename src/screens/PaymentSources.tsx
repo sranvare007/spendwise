@@ -72,7 +72,7 @@ export function PaymentSources() {
   );
 }
 
-// Reusable add form (name + type + color). Used here and in the Add-Expense modal.
+// Reusable add form (name + type + color). Used by the AddPaymentSource sheet.
 export function PaymentForm({ onAdd }: { onAdd: (input: { name: string; type: PaymentType; color: string }) => void }) {
   const t = useTheme();
   const [name, setName] = useState('');

@@ -18,7 +18,13 @@ export function SubScreen() {
   // All four sub-screens share this component; the route name selects the variant.
   const route = useRoute();
   const sub = SUB_KIND_BY_ROUTE[route.name as SubRouteName];
-  const { expenses, budget, changeBudget, recurring, toggleRecur, exportCsv, settings, toggleSetting } = useStore();
+  const { expenses, budget, changeBudget, recurring, toggleRecur, exportCsv, exportExcel, settings, toggleSetting } = useStore();
+  const [exporting, setExporting] = useState(false);
+  const onExportExcel = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try { await exportExcel(); } finally { setExporting(false); }
+  };
 
   // Investments only count here when the user opted them in — same rule as the Home hero.
   const countInvest = settings.investInBudget;
@@ -156,11 +162,11 @@ export function SubScreen() {
 
         {sub === 'export' && (
           <>
-            <AppText style={{ fontSize: 13, color: t.sub, marginBottom: 16, lineHeight: 19.5 }}>Export your expenses to a CSV file you can open in Excel or Google Sheets. Everything is generated on-device.</AppText>
+            <AppText style={{ fontSize: 13, color: t.sub, marginBottom: 16, lineHeight: 19.5 }}>Export every expense to an Excel workbook: the full list, plus month-by-month and category totals across all years. Everything is generated on-device.</AppText>
             <View style={{ borderRadius: 18, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, overflow: 'hidden', marginBottom: 16 }}>
               {[
-                { label: 'Date range', value: 'This month', accent: true },
-                { label: 'Categories', value: 'All', accent: true },
+                { label: 'Date range', value: 'All time', accent: true },
+                { label: 'Excel sheets', value: 'Expenses · Monthly · Categories', accent: true },
                 { label: 'Records', value: expenses.length + ' expenses', accent: false },
               ].map((row, i, arr) => (
                 <View key={row.label} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, paddingHorizontal: 16, borderBottomWidth: i === arr.length - 1 ? 0 : 1, borderBottomColor: t.line }}>
@@ -172,9 +178,12 @@ export function SubScreen() {
             <View style={{ borderRadius: 14, backgroundColor: t.card2, paddingVertical: 14, paddingHorizontal: 16, marginBottom: 18 }}>
               <AppText style={{ fontFamily: 'monospace', fontSize: 11, color: t.sub, lineHeight: 18 }}>{csvPreview}</AppText>
             </View>
-            <Press onPress={exportCsv} style={{ height: 54, borderRadius: 16, backgroundColor: t.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, shadowColor: t.accent, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5 }}>
+            <Press onPress={onExportExcel} disabled={exporting} style={{ height: 54, borderRadius: 16, backgroundColor: t.accent, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, opacity: exporting ? 0.7 : 1, shadowColor: t.accent, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5 }}>
               <Icon name="download" size={20} color={t.onAccent} strokeWidth={2.2} />
-              <AppText style={{ fontSize: 16, fontWeight: '800', color: t.onAccent }}>Export CSV</AppText>
+              <AppText style={{ fontSize: 16, fontWeight: '800', color: t.onAccent }}>{exporting ? 'Preparing…' : 'Export Excel (.xlsx)'}</AppText>
+            </Press>
+            <Press onPress={exportCsv} style={{ height: 50, marginTop: 10, borderRadius: 16, backgroundColor: t.card, borderWidth: 1, borderColor: t.line, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <AppText style={{ fontSize: 15, fontWeight: '700', color: t.accent }}>Export CSV instead</AppText>
             </Press>
           </>
         )}

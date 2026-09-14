@@ -10,6 +10,7 @@ interface ExpenseRow {
   classification: Classification;
   date: string;
   account_id: string | null;
+  receipt: string | null;
 }
 interface PaymentAccountRow {
   id: string;
@@ -53,12 +54,24 @@ export interface NewExpense {
 // ---------- Expenses ----------
 export async function getExpenses(db: DB): Promise<Expense[]> {
   const rows = await db.getAllAsync<ExpenseRow>(
-    `SELECT id, amount, description, category_id, classification, date, account_id
-       FROM expenses
-      WHERE is_deleted = 0
-      ORDER BY date DESC`,
+    `SELECT e.id, e.amount, e.description, e.category_id, e.classification, e.date, e.account_id,
+            (SELECT r.uri FROM receipt_images r WHERE r.expense_id = e.id ORDER BY r.created_at DESC LIMIT 1) AS receipt
+       FROM expenses e
+      WHERE e.is_deleted = 0
+      ORDER BY e.date DESC`,
   );
-  return rows.map((r) => ({ id: r.id, amount: r.amount, desc: r.description, cat: r.category_id, wn: r.classification, date: r.date, account: r.account_id }));
+  return rows.map((r) => ({ id: r.id, amount: r.amount, desc: r.description, cat: r.category_id, wn: r.classification, date: r.date, account: r.account_id, receipt: r.receipt }));
+}
+
+// Replaces the receipt photo attached to an expense (null detaches it). `name` is the file
+// name inside the receipts directory — see receipts.ts for why no absolute URI is stored.
+export async function setExpenseReceipt(db: DB, expenseId: string, name: string | null, sizeBytes?: number | null): Promise<void> {
+  await db.runAsync('DELETE FROM receipt_images WHERE expense_id = ?', expenseId);
+  if (!name) return;
+  await db.runAsync(
+    'INSERT INTO receipt_images (id, expense_id, uri, width, height, size_bytes, created_at) VALUES (?, ?, ?, NULL, NULL, ?, ?)',
+    `rc${Date.now()}-${expenseId}`, expenseId, name, sizeBytes ?? null, new Date().toISOString(),
+  );
 }
 
 export async function insertExpense(db: DB, e: NewExpense): Promise<void> {
